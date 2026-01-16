@@ -8,7 +8,7 @@ interface LobbyViewProps {
   lobby: LobbyWithParticipants;
   onMoveToTeam: (participantId: string, team: Team) => void;
   onSetReady: (isReady: boolean) => void;
-  onCreateMatch: () => Promise<void>;
+  onCreateMatch: () => Promise<unknown>;
   onReadyMatch: () => Promise<void>;
   onLeaveLobby: () => void;
   onCancelLobby: () => void;
