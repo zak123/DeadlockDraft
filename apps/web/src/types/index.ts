@@ -1,0 +1,21 @@
+// Re-export all shared types for convenience
+export type {
+  User,
+  PublicUser,
+  LobbyStatus,
+  Team,
+  MatchConfig,
+  Lobby,
+  LobbyParticipant,
+  LobbyWithParticipants,
+  CreateLobbyRequest,
+  CreateLobbyResponse,
+  JoinLobbyRequest,
+  JoinLobbyResponse,
+  UpdateLobbyRequest,
+  MoveToTeamRequest,
+  AuthResponse,
+  WSClientMessage,
+  WSServerMessage,
+  ApiError,
+} from '@deadlock-draft/shared';

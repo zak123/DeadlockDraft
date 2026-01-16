@@ -1,0 +1,20 @@
+{
+  "name": "deadlock-draft",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "dev:server": "bun run --filter @deadlock-draft/server dev",
+    "dev:web": "bun run --filter @deadlock-draft/web dev",
+    "build": "bun run --filter '*' build",
+    "build:server": "bun run --filter @deadlock-draft/server build",
+    "build:web": "bun run --filter @deadlock-draft/web build",
+    "db:generate": "bun run --filter @deadlock-draft/server db:generate",
+    "db:migrate": "bun run --filter @deadlock-draft/server db:migrate",
+    "typecheck": "bun run --filter '*' typecheck",
+    "lint": "bun run --filter '*' lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
