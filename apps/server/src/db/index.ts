@@ -6,7 +6,7 @@ import { getConfig } from '../config/env';
 const config = getConfig();
 
 // Ensure data directory exists
-const dbPath = config.databaseUrl;
+const dbPath = config.DATABASE_URL;
 const dbDir = dbPath.substring(0, dbPath.lastIndexOf('/'));
 if (dbDir) {
   await Bun.write(dbDir + '/.gitkeep', '');
