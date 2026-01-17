@@ -264,7 +264,7 @@ export function DraftView({
         totalPicksInPhase={totalPicksInPhase}
       />
 
-      <div className="grid grid-cols-[1fr_2fr_1fr] gap-4">
+      <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 items-start">
         <TeamDraftPanel
           team="amber"
           picks={teamPicks.amber}
@@ -288,28 +288,8 @@ export function DraftView({
           />
 
           {isMyTurn && (
-            <div className="flex flex-col items-center gap-3">
-              {selectedHeroes.length > 0 ? (
-                <div className="flex gap-4">
-                  <button
-                    onClick={handleCancelSelection}
-                    className="px-6 py-3 bg-deadlock-card hover:bg-deadlock-border rounded-lg font-medium transition-colors"
-                  >
-                    Clear Selection
-                  </button>
-                  <button
-                    onClick={() => setShowConfirmModal(true)}
-                    className={`px-8 py-3 rounded-lg font-bold transition-colors ${
-                      currentPhaseType === 'pick'
-                        ? 'bg-green-600 hover:bg-green-500 text-white'
-                        : 'bg-red-600 hover:bg-red-500 text-white'
-                    }`}
-                  >
-                    Confirm {selectedHeroes.length} {currentPhaseType === 'pick' ? 'Pick' : 'Ban'}
-                    {selectedHeroes.length > 1 ? 's' : ''}
-                  </button>
-                </div>
-              ) : (
+            <div className="flex flex-col items-center gap-2 h-12">
+              {selectedHeroes.length === 0 && (
                 <div className="text-deadlock-muted">
                   Select {remainingPicksInTurn > 1 ? `up to ${remainingPicksInTurn} heroes` : 'a hero'} to {currentPhaseType}
                 </div>
