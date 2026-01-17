@@ -112,6 +112,10 @@ class WebSocketClient {
   sendChat(message: string) {
     this.send({ type: 'lobby:chat', message });
   }
+
+  makeDraftPick(heroId: string) {
+    this.send({ type: 'draft:pick', heroId });
+  }
 }
 
 export const wsClient = new WebSocketClient();

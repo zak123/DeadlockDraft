@@ -1,0 +1,164 @@
+import { useState, useEffect } from 'react';
+import type { DraftConfig, UpdateDraftConfigRequest } from '@deadlock-draft/shared';
+
+interface DraftConfigModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  config: DraftConfig | null;
+  onSave: (updates: UpdateDraftConfigRequest) => Promise<void>;
+  onStartDraft: () => Promise<void>;
+}
+
+export function DraftConfigModal({
+  isOpen,
+  onClose,
+  config,
+  onSave,
+  onStartDraft,
+}: DraftConfigModalProps) {
+  const [skipBans, setSkipBans] = useState(false);
+  const [timePerPick, setTimePerPick] = useState(30);
+  const [timePerBan, setTimePerBan] = useState(20);
+  const [saving, setSaving] = useState(false);
+  const [starting, setStarting] = useState(false);
+
+  useEffect(() => {
+    if (config) {
+      setSkipBans(config.skipBans);
+      setTimePerPick(config.timePerPick);
+      setTimePerBan(config.timePerBan);
+    }
+  }, [config]);
+
+  if (!isOpen) return null;
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave({ skipBans, timePerPick, timePerBan });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleStart = async () => {
+    setStarting(true);
+    try {
+      await onStartDraft();
+      onClose();
+    } catch (err) {
+      // Error is handled by parent
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="relative bg-deadlock-card rounded-xl p-6 w-full max-w-md shadow-xl">
+        <h2 className="text-xl font-bold mb-6">Draft Configuration</h2>
+
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">Skip Ban Phases</div>
+              <div className="text-sm text-deadlock-muted">
+                Go straight to picking heroes
+              </div>
+            </div>
+            <button
+              onClick={() => setSkipBans(!skipBans)}
+              className={`w-14 h-8 rounded-full transition-colors ${
+                skipBans ? 'bg-amber' : 'bg-deadlock-border'
+              }`}
+            >
+              <div
+                className={`w-6 h-6 bg-white rounded-full transition-transform ${
+                  skipBans ? 'translate-x-7' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div>
+            <label className="block font-medium mb-2">
+              Time Per Pick (seconds)
+            </label>
+            <input
+              type="number"
+              min={10}
+              max={120}
+              value={timePerPick}
+              onChange={(e) => setTimePerPick(Number(e.target.value))}
+              className="w-full px-4 py-2 bg-deadlock-bg border border-deadlock-border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber"
+            />
+          </div>
+
+          {!skipBans && (
+            <div>
+              <label className="block font-medium mb-2">
+                Time Per Ban (seconds)
+              </label>
+              <input
+                type="number"
+                min={10}
+                max={120}
+                value={timePerBan}
+                onChange={(e) => setTimePerBan(Number(e.target.value))}
+                className="w-full px-4 py-2 bg-deadlock-bg border border-deadlock-border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber"
+              />
+            </div>
+          )}
+
+          <div className="bg-deadlock-bg rounded-lg p-4">
+            <div className="text-sm font-medium mb-2">Draft Order</div>
+            <div className="text-xs text-deadlock-muted space-y-1">
+              {skipBans ? (
+                <>
+                  <div>1. Pick: Amber → Sapphire → Sapphire → Amber</div>
+                  <div>2. Pick: Amber → Sapphire → Sapphire → Amber</div>
+                  <div>3. Pick: Sapphire → Amber → Amber → Sapphire</div>
+                </>
+              ) : (
+                <>
+                  <div>1. Ban: Amber → Sapphire → Amber → Sapphire</div>
+                  <div>2. Pick: Amber → Sapphire → Sapphire → Amber</div>
+                  <div>3. Pick: Amber → Sapphire → Sapphire → Amber</div>
+                  <div>4. Ban: Sapphire → Amber → Sapphire → Amber</div>
+                  <div>5. Pick: Sapphire → Amber → Amber → Sapphire</div>
+                </>
+              )}
+            </div>
+            <div className="text-xs text-deadlock-muted mt-2">
+              Total: {skipBans ? '6 picks' : '4 bans, 6 picks'} per team
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 bg-deadlock-border hover:bg-deadlock-muted/30 rounded-lg font-medium transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 px-4 py-2 bg-sapphire hover:bg-sapphire/80 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+          >
+            {saving ? 'Saving...' : 'Save Settings'}
+          </button>
+          <button
+            onClick={handleStart}
+            disabled={starting}
+            className="flex-1 px-4 py-2 bg-amber hover:bg-amber/80 text-black rounded-lg font-bold transition-colors disabled:opacity-50"
+          >
+            {starting ? 'Starting...' : 'Start Draft'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

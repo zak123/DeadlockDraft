@@ -9,6 +9,13 @@ import type {
   MoveToTeamRequest,
   Team,
   ApiError,
+  DraftConfig,
+  DraftState,
+  UpdateDraftConfigRequest,
+  StartDraftResponse,
+  MakeDraftPickResponse,
+  GetDraftStateResponse,
+  GetHeroesResponse,
 } from '@deadlock-draft/shared';
 
 const API_BASE = '/api';
@@ -138,6 +145,44 @@ class ApiClient {
     matchId: string | null;
   }> {
     return this.request(`/lobbies/${code}/match/status`);
+  }
+
+  // Draft
+  async getHeroes(): Promise<string[]> {
+    const result = await this.request<GetHeroesResponse>('/heroes');
+    return result.heroes;
+  }
+
+  async getDraftConfig(code: string): Promise<DraftConfig> {
+    const result = await this.request<{ config: DraftConfig }>(`/lobbies/${code}/draft/config`);
+    return result.config;
+  }
+
+  async updateDraftConfig(code: string, data: UpdateDraftConfigRequest): Promise<DraftConfig> {
+    const result = await this.request<{ config: DraftConfig }>(`/lobbies/${code}/draft/config`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return result.config;
+  }
+
+  async startDraft(code: string): Promise<DraftState> {
+    const result = await this.request<StartDraftResponse>(`/lobbies/${code}/draft/start`, {
+      method: 'POST',
+    });
+    return result.draftState;
+  }
+
+  async makeDraftPick(code: string, heroId: string): Promise<MakeDraftPickResponse> {
+    return this.request<MakeDraftPickResponse>(`/lobbies/${code}/draft/pick`, {
+      method: 'POST',
+      body: JSON.stringify({ heroId }),
+    });
+  }
+
+  async getDraftState(code: string): Promise<DraftState | null> {
+    const result = await this.request<GetDraftStateResponse>(`/lobbies/${code}/draft/state`);
+    return result.draftState;
   }
 }
 

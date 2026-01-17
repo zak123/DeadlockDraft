@@ -8,6 +8,7 @@ import { rateLimit } from './middleware/rate-limit';
 import { auth } from './routes/auth';
 import { lobbies } from './routes/lobbies';
 import { matches } from './routes/matches';
+import { draft } from './routes/draft';
 import { websocketHandlers } from './services/websocket';
 import { lobbyManager } from './services/lobby-manager';
 import { db, sessions } from './db';
@@ -40,6 +41,8 @@ app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOStri
 app.route('/api/auth', auth);
 app.route('/api/lobbies', lobbies);
 app.route('/api/lobbies', matches);
+app.route('/api/lobbies', draft);
+app.route('/api', draft);
 
 // 404 handler
 app.notFound((c) => {

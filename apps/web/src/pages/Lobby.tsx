@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useLobby } from '../hooks/useLobby';
+import { useDraft } from '../hooks/useDraft';
 import { api } from '../services/api';
 import { LobbyView } from '../components/lobby/LobbyView';
+import { DraftView } from '../components/draft';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { Modal } from '../components/common/Modal';
@@ -14,6 +16,14 @@ export function Lobby() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { lobby, loading, error, setReady, moveToTeam, createMatch, readyMatch, refresh } = useLobby(code || null);
+  const {
+    draftState,
+    draftConfig,
+    heroes,
+    updateConfig,
+    startDraft,
+    makePick,
+  } = useDraft(code || null);
 
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [anonymousName, setAnonymousName] = useState('');
@@ -31,6 +41,20 @@ export function Lobby() {
       (user && p.userId === user.id) ||
       (joinedParticipantId && p.id === joinedParticipantId)
   );
+
+  // Get current participant
+  const currentParticipant = useMemo(() => {
+    if (!lobby) return null;
+    const sessionToken = localStorage.getItem('anonymousSessionToken');
+    return lobby.participants.find(
+      (p) =>
+        (user && p.userId === user.id) ||
+        (sessionToken && p.sessionToken === sessionToken)
+    ) || null;
+  }, [lobby, user]);
+
+  // Check if draft is active
+  const isDraftActive = draftState?.session.status === 'active' || draftState?.session.status === 'completed';
 
   // Auto-join for authenticated Steam users, show modal for guests
   useEffect(() => {
@@ -163,15 +187,27 @@ export function Lobby() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         {isInLobby ? (
-          <LobbyView
-            lobby={lobby}
-            onMoveToTeam={moveToTeam}
-            onSetReady={setReady}
-            onCreateMatch={createMatch}
-            onReadyMatch={readyMatch}
-            onLeaveLobby={handleLeaveLobby}
-            onCancelLobby={handleCancelLobby}
-          />
+          isDraftActive && draftState ? (
+            <DraftView
+              draftState={draftState}
+              heroes={heroes}
+              currentParticipant={currentParticipant}
+              onMakePick={makePick}
+            />
+          ) : (
+            <LobbyView
+              lobby={lobby}
+              draftConfig={draftConfig}
+              onMoveToTeam={moveToTeam}
+              onSetReady={setReady}
+              onCreateMatch={createMatch}
+              onReadyMatch={readyMatch}
+              onLeaveLobby={handleLeaveLobby}
+              onCancelLobby={handleCancelLobby}
+              onUpdateDraftConfig={updateConfig}
+              onStartDraft={startDraft}
+            />
+          )
         ) : (
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="card p-8 text-center max-w-md">

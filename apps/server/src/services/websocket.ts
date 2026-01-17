@@ -1,6 +1,7 @@
 import type { ServerWebSocket } from 'bun';
 import type { WSClientMessage, WSServerMessage, LobbyWithParticipants } from '@deadlock-draft/shared';
 import { lobbyManager } from './lobby-manager';
+import { draftManager } from './draft-manager';
 import { db, sessions, lobbyParticipants } from '../db';
 import { eq, and, gt } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
@@ -65,6 +66,9 @@ class WebSocketManager {
           break;
         case 'lobby:chat':
           await this.handleChat(ws, data.message);
+          break;
+        case 'draft:pick':
+          await this.handleDraftPick(ws, data.heroId);
           break;
       }
     } catch (error) {
@@ -185,6 +189,26 @@ class WebSocketManager {
       message: message.slice(0, 500), // Limit message length
       timestamp: new Date().toISOString(),
     });
+  }
+
+  private async handleDraftPick(ws: WSClient, heroId: string) {
+    if (!ws.data.lobbyCode) {
+      this.send(ws, { type: 'error', message: 'Not in a lobby' });
+      return;
+    }
+
+    try {
+      await draftManager.makePick(
+        ws.data.lobbyCode,
+        heroId,
+        ws.data.userId || undefined,
+        ws.data.sessionToken || undefined
+      );
+      // Draft state broadcasting is handled by draftManager
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to make pick';
+      this.send(ws, { type: 'error', message: errorMessage });
+    }
   }
 
   private removeFromLobby(ws: WSClient) {

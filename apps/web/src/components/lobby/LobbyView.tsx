@@ -1,30 +1,38 @@
 import { useState, useMemo } from 'react';
 import { TeamPanel } from './TeamPanel';
 import { Button } from '../common/Button';
+import { DraftConfigModal } from '../draft';
 import { useAuth } from '../../hooks/useAuth';
-import type { LobbyWithParticipants, Team } from '@deadlock-draft/shared';
+import type { LobbyWithParticipants, Team, DraftConfig, UpdateDraftConfigRequest } from '@deadlock-draft/shared';
 
 interface LobbyViewProps {
   lobby: LobbyWithParticipants;
+  draftConfig: DraftConfig | null;
   onMoveToTeam: (participantId: string, team: Team) => void;
   onSetReady: (isReady: boolean) => void;
   onCreateMatch: () => Promise<unknown>;
   onReadyMatch: () => Promise<void>;
   onLeaveLobby: () => void;
   onCancelLobby: () => void;
+  onUpdateDraftConfig: (updates: UpdateDraftConfigRequest) => Promise<void>;
+  onStartDraft: () => Promise<void>;
 }
 
 export function LobbyView({
   lobby,
+  draftConfig,
   onMoveToTeam,
   onSetReady,
   onCreateMatch,
   onReadyMatch,
   onLeaveLobby,
   onCancelLobby,
+  onUpdateDraftConfig,
+  onStartDraft,
 }: LobbyViewProps) {
   const { user } = useAuth();
   const [creatingMatch, setCreatingMatch] = useState(false);
+  const [showDraftConfig, setShowDraftConfig] = useState(false);
 
   const isHost = user?.id === lobby.hostUserId;
   const currentSessionToken = localStorage.getItem('anonymousSessionToken');
@@ -179,12 +187,20 @@ export function LobbyView({
           </div>
 
           {isHost && !lobby.deadlockPartyCode && (
-            <Button
-              onClick={handleCreateMatch}
-              disabled={creatingMatch}
-            >
-              {creatingMatch ? 'Creating Match...' : 'Create Deadlock Match'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => setShowDraftConfig(true)}
+              >
+                Configure Draft
+              </Button>
+              <Button
+                onClick={handleCreateMatch}
+                disabled={creatingMatch}
+              >
+                {creatingMatch ? 'Creating Match...' : 'Create Deadlock Match'}
+              </Button>
+            </div>
           )}
 
           {isHost && lobby.deadlockPartyCode && !lobby.deadlockMatchId && (
@@ -194,6 +210,14 @@ export function LobbyView({
           )}
         </div>
       </div>
+
+      <DraftConfigModal
+        isOpen={showDraftConfig}
+        onClose={() => setShowDraftConfig(false)}
+        config={draftConfig}
+        onSave={onUpdateDraftConfig}
+        onStartDraft={onStartDraft}
+      />
     </div>
   );
 }

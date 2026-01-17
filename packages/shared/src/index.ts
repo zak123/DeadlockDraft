@@ -1,3 +1,6 @@
+// Re-export draft types
+export * from './types/draft';
+
 // User types
 export interface User {
   id: string;
@@ -105,7 +108,8 @@ export type WSClientMessage =
   | { type: 'lobby:join'; lobbyCode: string; sessionToken?: string }
   | { type: 'lobby:leave' }
   | { type: 'lobby:ready'; isReady: boolean }
-  | { type: 'lobby:chat'; message: string };
+  | { type: 'lobby:chat'; message: string }
+  | { type: 'draft:pick'; heroId: string };
 
 export type WSServerMessage =
   | { type: 'lobby:update'; lobby: LobbyWithParticipants }
@@ -116,7 +120,12 @@ export type WSServerMessage =
   | { type: 'lobby:match-starting'; matchId: string }
   | { type: 'lobby:chat'; senderId: string; senderName: string; message: string; timestamp: string }
   | { type: 'error'; message: string }
-  | { type: 'connected'; connectionId: string };
+  | { type: 'connected'; connectionId: string }
+  | { type: 'draft:started'; draftState: DraftState }
+  | { type: 'draft:turn'; session: DraftSession; timeRemaining: number }
+  | { type: 'draft:pick'; pick: DraftPick; draftState: DraftState }
+  | { type: 'draft:completed'; draftState: DraftState }
+  | { type: 'draft:timeout'; autoPick: DraftPick; draftState: DraftState };
 
 // Deadlock API types
 export interface DeadlockCreateMatchResponse {
