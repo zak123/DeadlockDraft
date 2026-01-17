@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { HeroCard } from './HeroCard';
-import type { DraftPick, DraftTeam } from '@deadlock-draft/shared';
+import type { DraftPick, DraftTeam, DraftPhaseType } from '@deadlock-draft/shared';
 
 interface TeamDraftPanelProps {
   team: DraftTeam;
@@ -9,6 +9,7 @@ interface TeamDraftPanelProps {
   maxPicks: number;
   maxBans: number;
   isCurrentTurn: boolean;
+  phaseType?: DraftPhaseType;
 }
 
 export function TeamDraftPanel({
@@ -18,21 +19,36 @@ export function TeamDraftPanel({
   maxPicks,
   maxBans,
   isCurrentTurn,
+  phaseType = 'pick',
 }: TeamDraftPanelProps) {
   const teamName = team === 'amber' ? 'Team Amber' : 'Team Sapphire';
 
   const emptyPickSlots = maxPicks - picks.length;
   const emptyBanSlots = maxBans - bans.length;
 
+  const isPicking = phaseType === 'pick';
+
   return (
-    <div
-      className={clsx(
-        'flex flex-col bg-deadlock-card rounded-xl p-4 transition-all',
-        isCurrentTurn && 'ring-2',
-        isCurrentTurn && team === 'amber' && 'ring-amber',
-        isCurrentTurn && team === 'sapphire' && 'ring-sapphire'
-      )}
-    >
+    <div className="relative">
+      {/* Animated glow background */}
+      <div
+        className={clsx(
+          'absolute inset-0 rounded-xl transition-all duration-500 ease-in-out',
+          isCurrentTurn && isPicking && 'bg-green-500/20 shadow-[0_0_40px_rgba(34,197,94,0.3)]',
+          isCurrentTurn && !isPicking && 'bg-red-500/20 shadow-[0_0_40px_rgba(239,68,68,0.3)]',
+          !isCurrentTurn && 'opacity-0'
+        )}
+      />
+      <div
+        className={clsx(
+          'relative flex flex-col bg-deadlock-card rounded-xl p-4 transition-all duration-300',
+          isCurrentTurn && 'ring-2',
+          isCurrentTurn && isPicking && 'ring-green-500',
+          isCurrentTurn && !isPicking && 'ring-red-500',
+          !isCurrentTurn && team === 'amber' && 'border border-amber/20',
+          !isCurrentTurn && team === 'sapphire' && 'border border-sapphire/20'
+        )}
+      >
       <h3
         className={clsx(
           'text-lg font-bold mb-4 text-center',
@@ -78,25 +94,33 @@ export function TeamDraftPanel({
         {maxBans > 0 && (
           <>
             <div className="text-xs text-deadlock-muted mb-2 uppercase tracking-wide">Bans</div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid grid-cols-2 gap-2">
               {bans.map((ban) => (
-                <HeroCard
-                  key={ban.id}
-                  heroId={ban.heroId}
-                  isAvailable={false}
-                  isBanned
-                  size="sm"
-                />
+                <div key={ban.id} className="flex items-center gap-2">
+                  <HeroCard
+                    heroId={ban.heroId}
+                    isAvailable={false}
+                    isBanned
+                    size="sm"
+                  />
+                  <span className="text-sm truncate capitalize text-red-400/70">
+                    {ban.heroId.replace('_', ' ')}
+                  </span>
+                </div>
               ))}
               {Array.from({ length: emptyBanSlots }).map((_, i) => (
                 <div
                   key={`empty-ban-${i}`}
-                  className="w-12 h-12 rounded-lg border-2 border-dashed border-red-500/30"
-                />
+                  className="flex items-center gap-2"
+                >
+                  <div className="w-12 h-12 rounded-lg border-2 border-dashed border-red-500/30" />
+                  <span className="text-sm text-deadlock-muted">—</span>
+                </div>
               ))}
             </div>
           </>
         )}
+      </div>
       </div>
     </div>
   );

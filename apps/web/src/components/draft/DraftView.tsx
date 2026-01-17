@@ -1,7 +1,8 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { DraftTimer } from './DraftTimer';
 import { HeroGrid } from './HeroGrid';
 import { TeamDraftPanel } from './TeamDraftPanel';
+import { ConfirmPickModal } from './ConfirmPickModal';
 import type { DraftState, LobbyParticipant, DraftTeam } from '@deadlock-draft/shared';
 
 interface DraftViewProps {
@@ -23,7 +24,8 @@ export function DraftView({
   onCancelDraft,
   onCreateMatch,
 }: DraftViewProps) {
-  const [selectedHero, setSelectedHero] = useState<string | null>(null);
+  const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [creatingMatch, setCreatingMatch] = useState(false);
@@ -43,35 +45,64 @@ export function DraftView({
     if (config.skipBans) {
       phases = phases.filter((p) => p.type !== 'ban');
     }
-    const currentPhase = phases[session.currentPhaseIndex];
-    if (!currentPhase) return { currentPickInPhase: 1, totalPicksInPhase: 1 };
 
-    const phasePicks = currentPhase.picks;
-    const currentIdx = session.currentPickIndex;
+    // Flatten all phases into a single sequence with phase/pick indices
+    const flattenedPicks: { team: string; phaseIndex: number; pickIndex: number; phaseType: string }[] = [];
+    phases.forEach((phase, phaseIdx) => {
+      phase.picks.forEach((team, pickIdx) => {
+        flattenedPicks.push({ team, phaseIndex: phaseIdx, pickIndex: pickIdx, phaseType: phase.type });
+      });
+    });
+
+    // Find current position in flattened array
+    const currentFlatIndex = flattenedPicks.findIndex(
+      (p) => p.phaseIndex === session.currentPhaseIndex && p.pickIndex === session.currentPickIndex
+    );
+
+    if (currentFlatIndex === -1) return { currentPickInPhase: 1, totalPicksInPhase: 1 };
+
     const currentTeam = session.currentTeam;
+    const currentPhaseType = flattenedPicks[currentFlatIndex]?.phaseType;
 
-    // Find the start and end of consecutive picks for current team
-    let startIdx = currentIdx;
-    let endIdx = currentIdx;
-
-    // Find start of consecutive run
-    while (startIdx > 0 && phasePicks[startIdx - 1] === currentTeam) {
-      startIdx--;
+    // Find the start of consecutive picks for current team (same phase type)
+    let startFlatIdx = currentFlatIndex;
+    while (
+      startFlatIdx > 0 &&
+      flattenedPicks[startFlatIdx - 1].team === currentTeam &&
+      flattenedPicks[startFlatIdx - 1].phaseType === currentPhaseType
+    ) {
+      startFlatIdx--;
     }
 
-    // Find end of consecutive run
-    while (endIdx < phasePicks.length - 1 && phasePicks[endIdx + 1] === currentTeam) {
-      endIdx++;
+    // Find the end of consecutive picks for current team (same phase type)
+    let endFlatIdx = currentFlatIndex;
+    while (
+      endFlatIdx < flattenedPicks.length - 1 &&
+      flattenedPicks[endFlatIdx + 1].team === currentTeam &&
+      flattenedPicks[endFlatIdx + 1].phaseType === currentPhaseType
+    ) {
+      endFlatIdx++;
     }
 
-    const total = endIdx - startIdx + 1;
-    const current = currentIdx - startIdx + 1;
+    const total = endFlatIdx - startFlatIdx + 1;
+    const current = currentFlatIndex - startFlatIdx + 1;
 
     return { currentPickInPhase: current, totalPicksInPhase: total };
   }, [config, session.currentPhaseIndex, session.currentPickIndex, session.currentTeam]);
 
+  // Calculate how many picks remain in the current consecutive turn
+  const remainingPicksInTurn = useMemo(() => {
+    return totalPicksInPhase - currentPickInPhase + 1;
+  }, [totalPicksInPhase, currentPickInPhase]);
+
   const myTeam = currentParticipant?.team as DraftTeam | undefined;
   const isMyTurn = myTeam === session.currentTeam && session.status === 'active';
+
+  // Reset selected heroes when turn changes
+  useEffect(() => {
+    setSelectedHeroes([]);
+    setShowConfirmModal(false);
+  }, [session.currentTeam, session.currentPhaseIndex, session.currentPickIndex]);
 
   const teamPicks = useMemo(() => {
     const amberPicks = picks.filter((p) => p.type === 'pick' && p.team === 'amber');
@@ -114,17 +145,47 @@ export function DraftView({
   }, [config]);
 
   const handleSelectHero = useCallback((heroId: string) => {
-    setSelectedHero(heroId);
-    setIsConfirming(false);
+    setSelectedHeroes((prev) => {
+      if (prev.includes(heroId)) {
+        // Deselect if already selected
+        return prev.filter((h) => h !== heroId);
+      } else {
+        // Add to selection
+        return [...prev, heroId];
+      }
+    });
   }, []);
 
-  const handleConfirmPick = useCallback(() => {
-    if (!selectedHero || !isMyTurn) return;
+  // Auto-show modal when all selections are made
+  useEffect(() => {
+    if (selectedHeroes.length === remainingPicksInTurn && selectedHeroes.length > 0 && isMyTurn) {
+      setShowConfirmModal(true);
+    }
+  }, [selectedHeroes, remainingPicksInTurn, isMyTurn]);
+
+  const handleConfirmPick = useCallback(async () => {
+    if (selectedHeroes.length === 0 || !isMyTurn) return;
     setIsConfirming(true);
-    onMakePick(selectedHero);
-    setSelectedHero(null);
-    setIsConfirming(false);
-  }, [selectedHero, isMyTurn, onMakePick]);
+    try {
+      // Make picks in order with small delay between each
+      for (let i = 0; i < selectedHeroes.length; i++) {
+        onMakePick(selectedHeroes[i]);
+        // Small delay between picks to ensure server processes them in order
+        if (i < selectedHeroes.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
+      setSelectedHeroes([]);
+      setShowConfirmModal(false);
+    } finally {
+      setIsConfirming(false);
+    }
+  }, [selectedHeroes, isMyTurn, onMakePick]);
+
+  const handleCancelSelection = useCallback(() => {
+    setSelectedHeroes([]);
+    setShowConfirmModal(false);
+  }, []);
 
   const handleCancelDraft = useCallback(async () => {
     if (!confirm('Are you sure you want to cancel the draft? All progress will be lost.')) return;
@@ -211,6 +272,7 @@ export function DraftView({
           maxPicks={maxPicksPerTeam}
           maxBans={teamBans.maxPerTeam}
           isCurrentTurn={session.currentTeam === 'amber'}
+          phaseType={currentPhaseType}
         />
 
         <div className="flex flex-col gap-4">
@@ -218,36 +280,43 @@ export function DraftView({
             heroes={heroes}
             picks={picks}
             availableHeroes={availableHeroes}
-            selectedHero={selectedHero}
+            selectedHeroes={selectedHeroes}
             onSelectHero={handleSelectHero}
             isMyTurn={isMyTurn}
+            phaseType={currentPhaseType}
+            maxSelections={remainingPicksInTurn}
           />
 
           {isMyTurn && (
-            <div className="flex justify-center gap-4">
-              {selectedHero ? (
-                <>
+            <div className="flex flex-col items-center gap-3">
+              {selectedHeroes.length > 0 ? (
+                <div className="flex gap-4">
                   <button
-                    onClick={() => setSelectedHero(null)}
+                    onClick={handleCancelSelection}
                     className="px-6 py-3 bg-deadlock-card hover:bg-deadlock-border rounded-lg font-medium transition-colors"
                   >
-                    Cancel
+                    Clear Selection
                   </button>
                   <button
-                    onClick={handleConfirmPick}
-                    disabled={isConfirming}
-                    className="px-8 py-3 bg-amber hover:bg-amber/80 text-black rounded-lg font-bold transition-colors disabled:opacity-50"
+                    onClick={() => setShowConfirmModal(true)}
+                    className={`px-8 py-3 rounded-lg font-bold transition-colors ${
+                      currentPhaseType === 'pick'
+                        ? 'bg-green-600 hover:bg-green-500 text-white'
+                        : 'bg-red-600 hover:bg-red-500 text-white'
+                    }`}
                   >
-                    {isConfirming
-                      ? 'Confirming...'
-                      : currentPhaseType === 'ban'
-                      ? `Ban ${selectedHero.replace('_', ' ')}`
-                      : `Pick ${selectedHero.replace('_', ' ')}`}
+                    Confirm {selectedHeroes.length} {currentPhaseType === 'pick' ? 'Pick' : 'Ban'}
+                    {selectedHeroes.length > 1 ? 's' : ''}
                   </button>
-                </>
+                </div>
               ) : (
                 <div className="text-deadlock-muted">
-                  Select a hero to {currentPhaseType}
+                  Select {remainingPicksInTurn > 1 ? `up to ${remainingPicksInTurn} heroes` : 'a hero'} to {currentPhaseType}
+                </div>
+              )}
+              {remainingPicksInTurn > 1 && selectedHeroes.length > 0 && selectedHeroes.length < remainingPicksInTurn && (
+                <div className="text-sm text-deadlock-muted">
+                  {remainingPicksInTurn - selectedHeroes.length} more selection{remainingPicksInTurn - selectedHeroes.length > 1 ? 's' : ''} available
                 </div>
               )}
             </div>
@@ -268,8 +337,18 @@ export function DraftView({
           maxPicks={maxPicksPerTeam}
           maxBans={teamBans.maxPerTeam}
           isCurrentTurn={session.currentTeam === 'sapphire'}
+          phaseType={currentPhaseType}
         />
       </div>
+
+      <ConfirmPickModal
+        isOpen={showConfirmModal}
+        selectedHeroes={selectedHeroes}
+        phaseType={currentPhaseType}
+        onConfirm={handleConfirmPick}
+        onCancel={handleCancelSelection}
+        isConfirming={isConfirming}
+      />
     </div>
   );
 }

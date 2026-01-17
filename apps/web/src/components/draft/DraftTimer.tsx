@@ -55,7 +55,14 @@ export function DraftTimer({
         {phaseText} {currentPickInPhase} of {totalPicksInPhase}
       </div>
       {isMyTurn && (
-        <div className="text-sm text-green-400 font-medium animate-pulse">
+        <div
+          className={clsx(
+            'text-2xl font-bold animate-pulse px-6 py-2 rounded-lg mt-2',
+            currentPhaseType === 'pick'
+              ? 'text-green-400 bg-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
+              : 'text-red-400 bg-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+          )}
+        >
           Your turn to {currentPhaseType}!
         </div>
       )}
