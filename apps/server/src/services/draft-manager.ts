@@ -21,10 +21,10 @@ const HEROES = [
 ];
 
 const DEFAULT_PHASES: DraftPhase[] = [
-  { type: 'ban', picks: ['amber', 'sapphire', 'amber', 'sapphire'] },
+  { type: 'ban', picks: ['amber', 'sapphire'] },
   { type: 'pick', picks: ['amber', 'sapphire', 'sapphire', 'amber'] },
   { type: 'pick', picks: ['amber', 'sapphire', 'sapphire', 'amber'] },
-  { type: 'ban', picks: ['sapphire', 'amber', 'sapphire', 'amber'] },
+  { type: 'ban', picks: ['sapphire', 'amber'] },
   { type: 'pick', picks: ['sapphire', 'amber', 'amber', 'sapphire'] },
 ];
 

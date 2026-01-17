@@ -21,6 +21,7 @@ export function DraftConfigModal({
   const [timePerBan, setTimePerBan] = useState(20);
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (config) {
@@ -43,11 +44,12 @@ export function DraftConfigModal({
 
   const handleStart = async () => {
     setStarting(true);
+    setError(null);
     try {
       await onStartDraft();
       onClose();
     } catch (err) {
-      // Error is handled by parent
+      setError(err instanceof Error ? err.message : 'Failed to start draft');
     } finally {
       setStarting(false);
     }
@@ -122,18 +124,24 @@ export function DraftConfigModal({
                 </>
               ) : (
                 <>
-                  <div>1. Ban: Amber → Sapphire → Amber → Sapphire</div>
+                  <div>1. Ban: Amber → Sapphire</div>
                   <div>2. Pick: Amber → Sapphire → Sapphire → Amber</div>
                   <div>3. Pick: Amber → Sapphire → Sapphire → Amber</div>
-                  <div>4. Ban: Sapphire → Amber → Sapphire → Amber</div>
+                  <div>4. Ban: Sapphire → Amber</div>
                   <div>5. Pick: Sapphire → Amber → Amber → Sapphire</div>
                 </>
               )}
             </div>
             <div className="text-xs text-deadlock-muted mt-2">
-              Total: {skipBans ? '6 picks' : '4 bans, 6 picks'} per team
+              Total: {skipBans ? '6 picks' : '2 bans, 6 picks'} per team
             </div>
           </div>
+
+          {error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+              {error}
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3 mt-6">
