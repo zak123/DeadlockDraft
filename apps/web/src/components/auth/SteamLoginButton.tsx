@@ -5,7 +5,7 @@ export function SteamLoginButton() {
 
   return (
     <button
-      onClick={login}
+      onClick={() => login()}
       className="flex items-center gap-3 px-6 py-3 bg-[#171A21] hover:bg-[#1B2838] text-white rounded-lg transition-colors border border-[#2A475E]"
     >
       <svg
