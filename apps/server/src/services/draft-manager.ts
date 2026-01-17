@@ -457,6 +457,13 @@ export class DraftManager {
       draftState,
     });
 
+    // Broadcast pick/ban to chat
+    const playerName = participant.user?.displayName || participant.anonymousName || 'Unknown';
+    const heroName = heroId.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const teamName = session.currentTeam === 'amber' ? 'Amber' : 'Sapphire';
+    const action = currentPhase.type === 'pick' ? 'picked' : 'banned';
+    wsManager.broadcastSystemMessage(lobbyCode, `${teamName} ${action} ${heroName}`);
+
     return draftState;
   }
 
@@ -709,6 +716,12 @@ export class DraftManager {
         autoPick: toDraftPickShared(pick),
         draftState,
       });
+
+      // Broadcast timeout to chat
+      const heroName = heroId.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const teamName = session.currentTeam === 'amber' ? 'Amber' : 'Sapphire';
+      const action = currentPhase.type === 'pick' ? 'auto-picked' : 'auto-banned';
+      wsManager.broadcastSystemMessage(lobbyCode, `${teamName} ran out of time and ${action} ${heroName}`);
     }
   }
 }

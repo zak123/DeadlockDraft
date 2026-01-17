@@ -167,19 +167,25 @@ class WebSocketManager {
       return;
     }
 
-    // Get sender info
+    // Get sender info from lobby participants
+    const lobby = await lobbyManager.getLobbyByCode(ws.data.lobbyCode);
+    if (!lobby) {
+      this.send(ws, { type: 'error', message: 'Lobby not found' });
+      return;
+    }
+
     let senderId = 'unknown';
     let senderName = 'Anonymous';
 
-    if (ws.data.userId) {
-      senderId = ws.data.userId;
-      // Would need to lookup user name here
-    } else if (ws.data.sessionToken) {
-      const participant = await lobbyManager.getParticipantByToken(ws.data.sessionToken);
-      if (participant) {
-        senderId = participant.id;
-        senderName = participant.anonymousName || 'Anonymous';
-      }
+    // Find participant in lobby
+    const participant = lobby.participants.find(p =>
+      (ws.data.userId && p.userId === ws.data.userId) ||
+      (ws.data.sessionToken && p.sessionToken === ws.data.sessionToken)
+    );
+
+    if (participant) {
+      senderId = participant.id;
+      senderName = participant.user?.displayName || participant.anonymousName || 'Anonymous';
     }
 
     this.broadcastToLobby(ws.data.lobbyCode, {
@@ -326,6 +332,17 @@ class WebSocketManager {
     if (userId && this.connectedParticipants.has(`user:${userId}`)) return true;
     if (sessionToken && this.connectedParticipants.has(`session:${sessionToken}`)) return true;
     return false;
+  }
+
+  // Broadcast a system chat message (for picks/bans)
+  broadcastSystemMessage(lobbyCode: string, message: string) {
+    this.broadcastToLobby(lobbyCode, {
+      type: 'lobby:chat',
+      senderId: 'system',
+      senderName: 'System',
+      message,
+      timestamp: new Date().toISOString(),
+    });
   }
 }
 

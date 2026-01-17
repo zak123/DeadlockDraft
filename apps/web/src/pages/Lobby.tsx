@@ -5,6 +5,7 @@ import { useLobby } from '../hooks/useLobby';
 import { useDraft } from '../hooks/useDraft';
 import { api } from '../services/api';
 import { LobbyView } from '../components/lobby/LobbyView';
+import { LobbyChat } from '../components/lobby/LobbyChat';
 import { DraftView } from '../components/draft';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
@@ -192,27 +193,43 @@ export function Lobby() {
       <main className="container mx-auto px-4 py-6">
         {isInLobby ? (
           isDraftActive && draftState ? (
-            <DraftView
-              draftState={draftState}
-              heroes={heroes}
-              currentParticipant={currentParticipant}
-              onMakePick={makePick}
-              isHost={isHost}
-              onCancelDraft={cancelDraft}
-              onCreateMatch={createMatch}
-            />
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-4">
+              <DraftView
+                draftState={draftState}
+                heroes={heroes}
+                currentParticipant={currentParticipant}
+                onMakePick={makePick}
+                isHost={isHost}
+                onCancelDraft={cancelDraft}
+                onCreateMatch={createMatch}
+              />
+              <div className="xl:sticky xl:top-4 xl:self-start">
+                <LobbyChat
+                  currentUserId={user?.id}
+                  currentSessionToken={localStorage.getItem('anonymousSessionToken') || undefined}
+                />
+              </div>
+            </div>
           ) : (
-            <LobbyView
-              lobby={lobby}
-              draftConfig={draftConfig}
-              onMoveToTeam={moveToTeam}
-              onSetReady={setReady}
-              onReadyMatch={readyMatch}
-              onLeaveLobby={handleLeaveLobby}
-              onCancelLobby={handleCancelLobby}
-              onUpdateDraftConfig={updateConfig}
-              onStartDraft={startDraft}
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6">
+              <LobbyView
+                lobby={lobby}
+                draftConfig={draftConfig}
+                onMoveToTeam={moveToTeam}
+                onSetReady={setReady}
+                onReadyMatch={readyMatch}
+                onLeaveLobby={handleLeaveLobby}
+                onCancelLobby={handleCancelLobby}
+                onUpdateDraftConfig={updateConfig}
+                onStartDraft={startDraft}
+              />
+              <div className="lg:sticky lg:top-4 lg:self-start">
+                <LobbyChat
+                  currentUserId={user?.id}
+                  currentSessionToken={localStorage.getItem('anonymousSessionToken') || undefined}
+                />
+              </div>
+            </div>
           )
         ) : (
           <div className="flex items-center justify-center min-h-[60vh]">
