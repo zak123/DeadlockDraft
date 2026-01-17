@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { DraftConfig, DraftState, UpdateDraftConfigRequest } from '@deadlock-draft/shared';
 
 interface DraftConfigModalProps {
@@ -23,26 +23,56 @@ export function DraftConfigModal({
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isInitialLoad = useRef(true);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (config) {
+      isInitialLoad.current = true;
       setSkipBans(config.skipBans);
       setTimePerTurn(config.timePerTurn);
       setAllowSinglePlayer(config.allowSinglePlayer);
       setTimerEnabled(config.timerEnabled);
+      // Allow a tick for state to settle before enabling auto-save
+      setTimeout(() => {
+        isInitialLoad.current = false;
+      }, 0);
     }
   }, [config]);
 
-  if (!isOpen) return null;
-
-  const handleSave = async () => {
+  const autoSave = useCallback(async (updates: UpdateDraftConfigRequest) => {
     setSaving(true);
     try {
-      await onSave({ skipBans, timePerTurn, allowSinglePlayer, timerEnabled });
+      await onSave(updates);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save settings');
     } finally {
       setSaving(false);
     }
-  };
+  }, [onSave]);
+
+  // Auto-save when settings change (with debounce for number inputs)
+  useEffect(() => {
+    if (isInitialLoad.current || !isOpen) return;
+
+    // Clear any pending save
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Debounce the save
+    saveTimeoutRef.current = setTimeout(() => {
+      autoSave({ skipBans, timePerTurn, allowSinglePlayer, timerEnabled });
+    }, 300);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [skipBans, timePerTurn, allowSinglePlayer, timerEnabled, autoSave, isOpen]);
+
+  if (!isOpen) return null;
 
   const handleStart = async () => {
     setStarting(true);
@@ -182,18 +212,14 @@ export function DraftConfigModal({
             Cancel
           </button>
           <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex-1 px-4 py-2 bg-sapphire hover:bg-sapphire/80 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
-          >
-            {saving ? 'Saving...' : 'Save Settings'}
-          </button>
-          <button
             onClick={handleStart}
-            disabled={starting}
-            className="flex-1 px-4 py-2 bg-amber hover:bg-amber/80 text-black rounded-lg font-bold transition-colors disabled:opacity-50"
+            disabled={starting || saving}
+            className="flex-1 px-4 py-2 bg-amber hover:bg-amber/80 text-black rounded-lg font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {starting ? 'Starting...' : 'Start Draft'}
+            {(starting || saving) && (
+              <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+            )}
+            {starting ? 'Starting...' : saving ? 'Saving...' : 'Start Draft'}
           </button>
         </div>
       </div>
