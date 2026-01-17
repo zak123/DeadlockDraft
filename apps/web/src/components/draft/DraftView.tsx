@@ -260,8 +260,6 @@ export function DraftView({
         timeRemaining={currentTurnTimeRemaining}
         isMyTurn={isMyTurn}
         timerEnabled={config.timerEnabled}
-        currentPickInPhase={currentPickInPhase}
-        totalPicksInPhase={totalPicksInPhase}
         remainingPicksInTurn={remainingPicksInTurn}
       />
 

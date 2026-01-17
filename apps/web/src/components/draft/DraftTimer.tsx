@@ -7,8 +7,6 @@ interface DraftTimerProps {
   timeRemaining: number;
   isMyTurn: boolean;
   timerEnabled: boolean;
-  currentPickInPhase: number;
-  totalPicksInPhase: number;
   remainingPicksInTurn: number;
 }
 
@@ -18,8 +16,6 @@ export function DraftTimer({
   timeRemaining,
   isMyTurn,
   timerEnabled,
-  currentPickInPhase,
-  totalPicksInPhase,
   remainingPicksInTurn,
 }: DraftTimerProps) {
   const teamName = currentTeam === 'amber' ? 'Team Amber' : 'Team Sapphire';
@@ -53,9 +49,6 @@ export function DraftTimer({
           {teamName}'s Turn
         </span>
       </div>
-      <div className="text-lg font-semibold text-white bg-deadlock-card px-4 py-1 rounded-full">
-        {phaseText} {currentPickInPhase} of {totalPicksInPhase}
-      </div>
       {isMyTurn && (
         <div
           className={clsx(
@@ -65,7 +58,7 @@ export function DraftTimer({
               : 'text-red-400 bg-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
           )}
         >
-          Your turn to {currentPhaseType} {remainingPicksInTurn > 1 ? `${remainingPicksInTurn} heroes` : ''}!
+          Your turn to {currentPhaseType} {remainingPicksInTurn} hero{remainingPicksInTurn > 1 ? 's' : ''}!
         </div>
       )}
       {timerEnabled ? (
