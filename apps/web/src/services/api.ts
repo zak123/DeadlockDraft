@@ -16,6 +16,7 @@ import type {
   MakeDraftPickResponse,
   GetDraftStateResponse,
   GetHeroesResponse,
+  GetPublicLobbiesResponse,
 } from '@deadlock-draft/shared';
 
 const API_BASE = '/api';
@@ -67,6 +68,11 @@ class ApiClient {
   }
 
   // Lobbies
+  async getPublicLobbies(): Promise<LobbyWithParticipants[]> {
+    const result = await this.request<GetPublicLobbiesResponse>('/lobbies/public');
+    return result.lobbies;
+  }
+
   async createLobby(data: CreateLobbyRequest): Promise<LobbyWithParticipants> {
     const result = await this.request<CreateLobbyResponse>('/lobbies', {
       method: 'POST',

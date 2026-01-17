@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { SteamLoginButton } from '../components/auth/SteamLoginButton';
@@ -6,6 +6,7 @@ import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { Modal } from '../components/common/Modal';
 import { api } from '../services/api';
+import type { LobbyWithParticipants } from '@deadlock-draft/shared';
 
 export function Home() {
   const { user, loading, logout } = useAuth();
@@ -13,8 +14,29 @@ export function Home() {
   const [joinCode, setJoinCode] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [lobbyName, setLobbyName] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  const [publicLobbies, setPublicLobbies] = useState<LobbyWithParticipants[]>([]);
+  const [loadingLobbies, setLoadingLobbies] = useState(true);
+
+  useEffect(() => {
+    const fetchPublicLobbies = async () => {
+      try {
+        const lobbies = await api.getPublicLobbies();
+        setPublicLobbies(lobbies);
+      } catch (err) {
+        console.error('Failed to fetch public lobbies:', err);
+      } finally {
+        setLoadingLobbies(false);
+      }
+    };
+
+    fetchPublicLobbies();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchPublicLobbies, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleJoinLobby = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +53,7 @@ export function Home() {
     setError('');
 
     try {
-      const lobby = await api.createLobby({ name: lobbyName.trim() });
+      const lobby = await api.createLobby({ name: lobbyName.trim(), isPublic });
       navigate(`/lobby/${lobby.code}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create lobby');
@@ -117,6 +139,42 @@ export function Home() {
               </div>
             )}
           </div>
+
+          {/* Public Lobbies */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold mb-4">Public Lobbies</h3>
+            {loadingLobbies ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber"></div>
+              </div>
+            ) : publicLobbies.length === 0 ? (
+              <p className="text-sm text-deadlock-muted text-center py-4">
+                No public lobbies available. Create one!
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {publicLobbies.map((lobby) => (
+                  <div
+                    key={lobby.id}
+                    className="flex items-center justify-between p-3 bg-deadlock-bg rounded-lg hover:bg-deadlock-border transition-colors"
+                  >
+                    <div>
+                      <div className="font-medium">{lobby.name}</div>
+                      <div className="text-sm text-deadlock-muted">
+                        {lobby.participants.length}/{lobby.maxPlayers} players • Hosted by {lobby.host.displayName}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => navigate(`/lobby/${lobby.code}`)}
+                    >
+                      Join
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
@@ -134,6 +192,27 @@ export function Home() {
             onChange={(e) => setLobbyName(e.target.value)}
             maxLength={100}
           />
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">Public Lobby</div>
+              <div className="text-sm text-deadlock-muted">
+                Allow anyone to find and join your lobby
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsPublic(!isPublic)}
+              className={`w-14 h-8 rounded-full transition-colors ${
+                isPublic ? 'bg-amber' : 'bg-deadlock-border'
+              }`}
+            >
+              <div
+                className={`w-6 h-6 bg-white rounded-full transition-transform ${
+                  isPublic ? 'translate-x-7' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <div className="flex gap-3 justify-end">
             <Button

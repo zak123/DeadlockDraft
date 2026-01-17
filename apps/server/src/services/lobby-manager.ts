@@ -33,6 +33,7 @@ function toLobbyWithParticipants(
     deadlockMatchId: lobby.deadlockMatchId,
     matchConfig: lobby.matchConfig,
     maxPlayers: lobby.maxPlayers,
+    isPublic: lobby.isPublic,
     createdAt: lobby.createdAt,
     updatedAt: lobby.updatedAt,
     expiresAt: lobby.expiresAt,
@@ -58,7 +59,8 @@ export class LobbyManager {
     hostUser: User,
     name: string,
     matchConfig?: Partial<MatchConfig>,
-    maxPlayers?: number
+    maxPlayers?: number,
+    isPublic?: boolean
   ): Promise<LobbyWithParticipants> {
     const code = generateCode();
     const expiresAt = new Date();
@@ -73,6 +75,7 @@ export class LobbyManager {
         hostUserId: hostUser.id,
         matchConfig: { ...DEFAULT_MATCH_CONFIG, ...matchConfig },
         maxPlayers: maxPlayers || DEFAULT_MAX_PLAYERS,
+        isPublic: isPublic || false,
         expiresAt: expiresAt.toISOString(),
       })
       .returning();
@@ -372,6 +375,23 @@ export class LobbyManager {
       where: eq(lobbyParticipants.sessionToken, sessionToken),
     });
     return participant || null;
+  }
+
+  async getPublicLobbies(): Promise<LobbyWithParticipants[]> {
+    const publicLobbies = await db.query.lobbies.findMany({
+      where: and(eq(lobbies.isPublic, true), eq(lobbies.status, 'waiting')),
+      with: {
+        host: true,
+        participants: {
+          with: { user: true },
+        },
+      },
+      orderBy: (lobbies, { desc }) => [desc(lobbies.createdAt)],
+    });
+
+    return publicLobbies.map((lobby) =>
+      toLobbyWithParticipants(lobby, lobby.participants, lobby.host)
+    );
   }
 }
 

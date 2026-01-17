@@ -53,6 +53,7 @@ export interface Lobby {
   deadlockMatchId: string | null;
   matchConfig: MatchConfig;
   maxPlayers: number;
+  isPublic: boolean;
   createdAt: string;
   updatedAt: string;
   expiresAt: string;
@@ -80,6 +81,11 @@ export interface CreateLobbyRequest {
   name: string;
   matchConfig?: Partial<MatchConfig>;
   maxPlayers?: number;
+  isPublic?: boolean;
+}
+
+export interface GetPublicLobbiesResponse {
+  lobbies: LobbyWithParticipants[];
 }
 
 export interface CreateLobbyResponse {

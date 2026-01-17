@@ -31,6 +31,7 @@ const createLobbySchema = z.object({
     })
     .optional(),
   maxPlayers: z.number().min(2).max(24).optional(),
+  isPublic: z.boolean().optional(),
 });
 
 const joinLobbySchema = z.object({
@@ -56,6 +57,12 @@ const moveToTeamSchema = z.object({
   team: z.enum(['amber', 'sapphire', 'spectator', 'unassigned']),
 });
 
+// Get public lobbies
+lobbies.get('/public', async (c) => {
+  const publicLobbies = await lobbyManager.getPublicLobbies();
+  return c.json({ lobbies: publicLobbies });
+});
+
 // Create lobby (requires auth)
 lobbies.post('/', requireAuth, async (c) => {
   const user = getAuthUser(c);
@@ -66,7 +73,8 @@ lobbies.post('/', requireAuth, async (c) => {
     user,
     validated.name,
     validated.matchConfig,
-    validated.maxPlayers
+    validated.maxPlayers,
+    validated.isPublic
   );
 
   return c.json<CreateLobbyResponse>({ lobby }, 201);
