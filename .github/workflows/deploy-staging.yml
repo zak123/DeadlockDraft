@@ -45,9 +45,9 @@ jobs:
             echo "Installing dependencies..."
             bun install
 
-            # Run database migrations
-            echo "Running database migrations..."
-            bun run db:migrate
+            # Sync database schema
+            echo "Syncing database schema..."
+            cd apps/server && bunx drizzle-kit push --force && cd ../..
 
             # Build frontend
             echo "Building frontend..."
