@@ -10,14 +10,17 @@ const config = getConfig();
 
 // Redirect to Steam OpenID login
 auth.get('/steam', (c) => {
-  const returnUrl = `${config.APP_URL}/api/auth/steam/callback`;
+  const returnTo = c.req.query('returnTo') || '/';
+  const returnUrl = `${config.APP_URL}/api/auth/steam/callback?returnTo=${encodeURIComponent(returnTo)}`;
   const loginUrl = steamAuthService.getLoginUrl(returnUrl);
   return c.redirect(loginUrl);
 });
 
 // Steam OpenID callback
 auth.get('/steam/callback', async (c) => {
-  const query = Object.fromEntries(new URL(c.req.url).searchParams);
+  const url = new URL(c.req.url);
+  const query = Object.fromEntries(url.searchParams);
+  const returnTo = url.searchParams.get('returnTo') || '/';
 
   const steamId = await steamAuthService.verifyCallback(query);
   if (!steamId) {
@@ -39,7 +42,11 @@ auth.get('/steam/callback', async (c) => {
     maxAge: 60 * 60 * 24 * 7, // 7 days
   });
 
-  return c.redirect(config.FRONTEND_URL);
+  // Redirect back to the original page (e.g., lobby)
+  const redirectUrl = returnTo.startsWith('/')
+    ? `${config.FRONTEND_URL}${returnTo}`
+    : config.FRONTEND_URL;
+  return c.redirect(redirectUrl);
 });
 
 // Get current user

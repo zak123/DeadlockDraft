@@ -54,8 +54,9 @@ class ApiClient {
     await this.request('/auth/logout', { method: 'POST' });
   }
 
-  getSteamLoginUrl(): string {
-    return `${API_BASE}/auth/steam`;
+  getSteamLoginUrl(returnTo?: string): string {
+    const params = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
+    return `${API_BASE}/auth/steam${params}`;
   }
 
   // Lobbies

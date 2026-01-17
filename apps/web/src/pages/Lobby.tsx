@@ -13,28 +13,46 @@ export function Lobby() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { lobby, loading, error, setReady, moveToTeam, createMatch, readyMatch } = useLobby(code || null);
+  const { lobby, loading, error, setReady, moveToTeam, createMatch, readyMatch, refresh } = useLobby(code || null);
 
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [anonymousName, setAnonymousName] = useState('');
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState('');
-
-  const sessionToken = localStorage.getItem('anonymousSessionToken');
+  const [joinedParticipantId, setJoinedParticipantId] = useState<string | null>(() => {
+    // Check if we have a stored participant ID for this lobby
+    const stored = localStorage.getItem(`lobby_participant_${code}`);
+    return stored || null;
+  });
 
   // Check if user is in the lobby
   const isInLobby = lobby?.participants.some(
     (p) =>
       (user && p.userId === user.id) ||
-      (sessionToken && p.sessionToken === sessionToken)
+      (joinedParticipantId && p.id === joinedParticipantId)
   );
 
-  // Show join modal if not in lobby
+  // Auto-join for authenticated Steam users, show modal for guests
   useEffect(() => {
     if (!loading && !authLoading && lobby && !isInLobby) {
-      setShowJoinModal(true);
+      if (user) {
+        // Auto-join for authenticated users
+        api.joinLobby(code!)
+          .then((result) => {
+            setJoinedParticipantId(result.participant.id);
+            localStorage.setItem(`lobby_participant_${code}`, result.participant.id);
+            return refresh();
+          })
+          .catch((err) => {
+            console.error('Failed to auto-join:', err);
+            setShowJoinModal(true);
+          });
+      } else {
+        // Show join modal for guests
+        setShowJoinModal(true);
+      }
     }
-  }, [loading, authLoading, lobby, isInLobby]);
+  }, [loading, authLoading, lobby, isInLobby, user, code, refresh]);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,9 +66,13 @@ export function Lobby() {
     setJoinError('');
 
     try {
-      await api.joinLobby(code!, user ? undefined : { anonymousName: anonymousName.trim() });
+      const result = await api.joinLobby(code!, user ? undefined : { anonymousName: anonymousName.trim() });
+      // Store participant ID to track membership
+      setJoinedParticipantId(result.participant.id);
+      localStorage.setItem(`lobby_participant_${code}`, result.participant.id);
       setShowJoinModal(false);
-      // Lobby will update via WebSocket
+      // Refresh lobby to show updated participants
+      await refresh();
     } catch (err) {
       setJoinError(err instanceof Error ? err.message : 'Failed to join lobby');
     } finally {
@@ -61,6 +83,7 @@ export function Lobby() {
   const handleLeaveLobby = async () => {
     try {
       await api.leaveLobby(code!);
+      localStorage.removeItem(`lobby_participant_${code}`);
       navigate('/');
     } catch (err) {
       console.error('Failed to leave lobby:', err);

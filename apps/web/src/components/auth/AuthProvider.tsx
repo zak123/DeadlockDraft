@@ -5,7 +5,7 @@ import type { User } from '@deadlock-draft/shared';
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  login: () => void;
+  login: (returnTo?: string) => void;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -33,8 +33,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     refresh().finally(() => setLoading(false));
   }, [refresh]);
 
-  const login = useCallback(() => {
-    window.location.href = api.getSteamLoginUrl();
+  const login = useCallback((returnTo?: string) => {
+    // Default to current path so user returns to same page after login
+    const path = returnTo ?? window.location.pathname;
+    window.location.href = api.getSteamLoginUrl(path);
   }, []);
 
   const logout = useCallback(async () => {
