@@ -82,6 +82,7 @@ export const draftConfigs = sqliteTable('draft_configs', {
   }>>(),
   timePerPick: integer('time_per_pick').notNull().default(30),
   timePerBan: integer('time_per_ban').notNull().default(20),
+  allowSinglePlayer: integer('allow_single_player', { mode: 'boolean' }).notNull().default(false),
 }, (table) => ({
   lobbyIdIdx: index('draft_configs_lobby_id_idx').on(table.lobbyId),
 }));

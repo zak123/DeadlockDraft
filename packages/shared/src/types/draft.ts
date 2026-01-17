@@ -16,6 +16,7 @@ export interface DraftConfig {
   phases: DraftPhase[];
   timePerPick: number;
   timePerBan: number;
+  allowSinglePlayer: boolean;
 }
 
 export interface DraftSession {
@@ -55,6 +56,7 @@ export interface UpdateDraftConfigRequest {
   phases?: DraftPhase[];
   timePerPick?: number;
   timePerBan?: number;
+  allowSinglePlayer?: boolean;
 }
 
 export interface StartDraftResponse {

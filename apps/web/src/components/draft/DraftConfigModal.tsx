@@ -19,6 +19,7 @@ export function DraftConfigModal({
   const [skipBans, setSkipBans] = useState(false);
   const [timePerPick, setTimePerPick] = useState(30);
   const [timePerBan, setTimePerBan] = useState(20);
+  const [allowSinglePlayer, setAllowSinglePlayer] = useState(false);
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +29,7 @@ export function DraftConfigModal({
       setSkipBans(config.skipBans);
       setTimePerPick(config.timePerPick);
       setTimePerBan(config.timePerBan);
+      setAllowSinglePlayer(config.allowSinglePlayer);
     }
   }, [config]);
 
@@ -36,7 +38,7 @@ export function DraftConfigModal({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave({ skipBans, timePerPick, timePerBan });
+      await onSave({ skipBans, timePerPick, timePerBan, allowSinglePlayer });
     } finally {
       setSaving(false);
     }
@@ -112,6 +114,27 @@ export function DraftConfigModal({
               />
             </div>
           )}
+
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">Single Player Testing</div>
+              <div className="text-sm text-deadlock-muted">
+                Allow starting draft without both teams filled
+              </div>
+            </div>
+            <button
+              onClick={() => setAllowSinglePlayer(!allowSinglePlayer)}
+              className={`w-14 h-8 rounded-full transition-colors ${
+                allowSinglePlayer ? 'bg-amber' : 'bg-deadlock-border'
+              }`}
+            >
+              <div
+                className={`w-6 h-6 bg-white rounded-full transition-transform ${
+                  allowSinglePlayer ? 'translate-x-7' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
 
           <div className="bg-deadlock-bg rounded-lg p-4">
             <div className="text-sm font-medium mb-2">Draft Order</div>

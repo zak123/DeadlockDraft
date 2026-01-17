@@ -36,6 +36,7 @@ function toDraftConfigShared(config: DraftConfig): SharedDraftConfig {
     phases: config.phases as DraftPhase[],
     timePerPick: config.timePerPick,
     timePerBan: config.timePerBan,
+    allowSinglePlayer: config.allowSinglePlayer,
   };
 }
 
@@ -95,6 +96,7 @@ export class DraftManager {
           phases: DEFAULT_PHASES,
           timePerPick: 30,
           timePerBan: 20,
+          allowSinglePlayer: false,
         })
         .returning();
     }
@@ -110,6 +112,7 @@ export class DraftManager {
       phases?: DraftPhase[];
       timePerPick?: number;
       timePerBan?: number;
+      allowSinglePlayer?: boolean;
     }
   ): Promise<SharedDraftConfig | null> {
     const lobby = await db.query.lobbies.findFirst({
@@ -134,6 +137,7 @@ export class DraftManager {
           phases: updates.phases ?? DEFAULT_PHASES,
           timePerPick: updates.timePerPick ?? 30,
           timePerBan: updates.timePerBan ?? 20,
+          allowSinglePlayer: updates.allowSinglePlayer ?? false,
         })
         .returning();
     } else {
@@ -142,6 +146,7 @@ export class DraftManager {
       if (updates.phases !== undefined) updateData.phases = updates.phases;
       if (updates.timePerPick !== undefined) updateData.timePerPick = updates.timePerPick;
       if (updates.timePerBan !== undefined) updateData.timePerBan = updates.timePerBan;
+      if (updates.allowSinglePlayer !== undefined) updateData.allowSinglePlayer = updates.allowSinglePlayer;
 
       [config] = await db
         .update(draftConfigs)
@@ -219,15 +224,17 @@ export class DraftManager {
       throw new Error('Draft is already in progress');
     }
 
-    // Ensure we have participants on both teams
-    const amberPlayers = lobby.participants.filter(p => p.team === 'amber');
-    const sapphirePlayers = lobby.participants.filter(p => p.team === 'sapphire');
-
-    if (amberPlayers.length === 0 || sapphirePlayers.length === 0) {
-      throw new Error('Both teams must have at least one player to start the draft');
-    }
-
     const config = await this.getOrCreateDraftConfig(lobby.id);
+
+    // Ensure we have participants on both teams (unless single player mode is enabled)
+    if (!config.allowSinglePlayer) {
+      const amberPlayers = lobby.participants.filter(p => p.team === 'amber');
+      const sapphirePlayers = lobby.participants.filter(p => p.team === 'sapphire');
+
+      if (amberPlayers.length === 0 || sapphirePlayers.length === 0) {
+        throw new Error('Both teams must have at least one player to start the draft');
+      }
+    }
 
     // Filter phases based on skipBans
     let phases = config.phases;

@@ -1,0 +1,1 @@
+ALTER TABLE `draft_configs` ADD `allow_single_player` integer DEFAULT false NOT NULL;

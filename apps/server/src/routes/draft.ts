@@ -28,6 +28,7 @@ const updateDraftConfigSchema = z.object({
     .optional(),
   timePerPick: z.number().min(10).max(120).optional(),
   timePerBan: z.number().min(10).max(120).optional(),
+  allowSinglePlayer: z.boolean().optional(),
 });
 
 const makeDraftPickSchema = z.object({
