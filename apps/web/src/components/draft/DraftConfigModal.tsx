@@ -17,7 +17,7 @@ export function DraftConfigModal({
   onStartDraft,
 }: DraftConfigModalProps) {
   const [skipBans, setSkipBans] = useState(false);
-  const [timePerTurn, setTimePerTurn] = useState(30);
+  const [timePerTurn, setTimePerTurn] = useState(60);
   const [allowSinglePlayer, setAllowSinglePlayer] = useState(false);
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [saving, setSaving] = useState(false);

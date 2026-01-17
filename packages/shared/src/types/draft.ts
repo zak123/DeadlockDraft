@@ -89,7 +89,7 @@ export const DEFAULT_DRAFT_PHASES: DraftPhase[] = [
   { type: 'pick', picks: ['sapphire', 'amber', 'amber', 'sapphire'] },
 ];
 
-export const DEFAULT_TIME_PER_TURN = 30;
+export const DEFAULT_TIME_PER_TURN = 60;
 
 // WebSocket message types for draft
 export type WSDraftClientMessage =
