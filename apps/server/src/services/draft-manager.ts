@@ -1,5 +1,5 @@
-import { db, lobbies, lobbyParticipants, draftConfigs, draftSessions, draftPicks } from '../db';
-import { eq, and } from 'drizzle-orm';
+import { db, lobbies, draftConfigs, draftSessions, draftPicks } from '../db';
+import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import type {
   DraftState,
@@ -458,7 +458,6 @@ export class DraftManager {
     });
 
     // Broadcast pick/ban to chat
-    const playerName = participant.user?.displayName || participant.anonymousName || 'Unknown';
     const heroName = heroId.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     const teamName = session.currentTeam === 'amber' ? 'Amber' : 'Sapphire';
     const action = currentPhase.type === 'pick' ? 'picked' : 'banned';

@@ -193,7 +193,7 @@ export function Lobby() {
       <main className="container mx-auto px-4 py-6">
         {isInLobby ? (
           isDraftActive && draftState ? (
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-4">
+            <div className="space-y-4">
               <DraftView
                 draftState={draftState}
                 heroes={heroes}
@@ -203,12 +203,10 @@ export function Lobby() {
                 onCancelDraft={cancelDraft}
                 onCreateMatch={createMatch}
               />
-              <div className="xl:sticky xl:top-4 xl:self-start">
-                <LobbyChat
-                  currentUserId={user?.id}
-                  currentSessionToken={localStorage.getItem('anonymousSessionToken') || undefined}
-                />
-              </div>
+              <LobbyChat
+                currentUserId={user?.id}
+                currentSessionToken={localStorage.getItem('anonymousSessionToken') || undefined}
+              />
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6">
