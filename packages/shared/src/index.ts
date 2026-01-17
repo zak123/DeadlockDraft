@@ -1,3 +1,10 @@
+// Import draft types for use in this file
+import type {
+  DraftState,
+  DraftSession,
+  DraftPick,
+} from './types/draft';
+
 // Re-export draft types
 export * from './types/draft';
 

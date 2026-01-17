@@ -20,7 +20,6 @@ export function TeamDraftPanel({
   isCurrentTurn,
 }: TeamDraftPanelProps) {
   const teamName = team === 'amber' ? 'Team Amber' : 'Team Sapphire';
-  const teamColor = team === 'amber' ? 'amber' : 'sapphire';
 
   const emptyPickSlots = maxPicks - picks.length;
   const emptyBanSlots = maxBans - bans.length;

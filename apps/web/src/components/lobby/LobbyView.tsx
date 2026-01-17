@@ -3,7 +3,7 @@ import { TeamPanel } from './TeamPanel';
 import { Button } from '../common/Button';
 import { DraftConfigModal } from '../draft';
 import { useAuth } from '../../hooks/useAuth';
-import type { LobbyWithParticipants, Team, DraftConfig, UpdateDraftConfigRequest } from '@deadlock-draft/shared';
+import type { LobbyWithParticipants, Team, DraftConfig, UpdateDraftConfigRequest, DraftState } from '@deadlock-draft/shared';
 
 interface LobbyViewProps {
   lobby: LobbyWithParticipants;
@@ -14,8 +14,8 @@ interface LobbyViewProps {
   onReadyMatch: () => Promise<void>;
   onLeaveLobby: () => void;
   onCancelLobby: () => void;
-  onUpdateDraftConfig: (updates: UpdateDraftConfigRequest) => Promise<void>;
-  onStartDraft: () => Promise<void>;
+  onUpdateDraftConfig: (updates: UpdateDraftConfigRequest) => Promise<DraftConfig | undefined>;
+  onStartDraft: () => Promise<DraftState | undefined>;
 }
 
 export function LobbyView({

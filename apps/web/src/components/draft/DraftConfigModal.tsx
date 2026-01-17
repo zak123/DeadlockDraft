@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import type { DraftConfig, UpdateDraftConfigRequest } from '@deadlock-draft/shared';
+import type { DraftConfig, DraftState, UpdateDraftConfigRequest } from '@deadlock-draft/shared';
 
 interface DraftConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
   config: DraftConfig | null;
-  onSave: (updates: UpdateDraftConfigRequest) => Promise<void>;
-  onStartDraft: () => Promise<void>;
+  onSave: (updates: UpdateDraftConfigRequest) => Promise<DraftConfig | undefined>;
+  onStartDraft: () => Promise<DraftState | undefined>;
 }
 
 export function DraftConfigModal({
