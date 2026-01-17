@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { getCookie } from 'hono/cookie';
 import { getConfig, isDev } from './config/env';
 import { errorHandler } from './middleware/error-handler';
 import { rateLimit } from './middleware/rate-limit';
@@ -9,6 +10,8 @@ import { lobbies } from './routes/lobbies';
 import { matches } from './routes/matches';
 import { websocketHandlers } from './services/websocket';
 import { lobbyManager } from './services/lobby-manager';
+import { db, sessions } from './db';
+import { eq, and, gt } from 'drizzle-orm';
 
 const config = getConfig();
 
@@ -62,8 +65,26 @@ const server = Bun.serve({
 });
 
 // Upgrade WebSocket connections
-app.get('/ws', (c) => {
-  const upgraded = server.upgrade(c.req.raw);
+app.get('/ws', async (c) => {
+  // Try to authenticate user from session cookie
+  let userId: string | null = null;
+  const sessionId = getCookie(c, 'session');
+
+  if (sessionId) {
+    const session = await db.query.sessions.findFirst({
+      where: and(
+        eq(sessions.id, sessionId),
+        gt(sessions.expiresAt, new Date().toISOString())
+      ),
+    });
+    if (session) {
+      userId = session.userId;
+    }
+  }
+
+  const upgraded = server.upgrade(c.req.raw, {
+    data: { userId },
+  });
   if (!upgraded) {
     return c.text('WebSocket upgrade failed', 400);
   }

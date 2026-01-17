@@ -14,20 +14,42 @@ interface WebSocketData {
 
 type WSClient = ServerWebSocket<WebSocketData>;
 
+// Participant connection info for tracking
+interface ParticipantConnection {
+  lobbyCode: string;
+  visitorId: string;
+  visitorUserId: string | null;
+  sessionToken: string | null;
+  lastSeen: number;
+}
+
 class WebSocketManager {
   private lobbySockets: Map<string, Set<WSClient>> = new Map();
+  // Track connected participants by visitorKey (visitorUserId or sessionToken)
+  private connectedParticipants: Map<string, ParticipantConnection> = new Map();
+  // Stale participant timeout (60 seconds)
+  private readonly STALE_TIMEOUT_MS = 60 * 1000;
+
+  constructor() {
+    // Start cleanup interval (runs every 30 seconds)
+    setInterval(() => this.cleanupStaleParticipants(), 30 * 1000);
+  }
 
   async handleOpen(ws: WSClient) {
     const connectionId = nanoid();
     ws.data.connectionId = connectionId;
     ws.data.lobbyCode = null;
-    ws.data.userId = null;
+    // userId may be passed from the upgrade request if user is authenticated
+    ws.data.userId = ws.data.userId || null;
     ws.data.sessionToken = null;
 
     this.send(ws, { type: 'connected', connectionId });
   }
 
   async handleMessage(ws: WSClient, message: string) {
+    // Update last seen time on any message
+    this.updateLastSeen(ws);
+
     try {
       const data = JSON.parse(message) as WSClientMessage;
 
@@ -51,14 +73,27 @@ class WebSocketManager {
     }
   }
 
-  handleClose(ws: WSClient) {
-    this.removeFromLobby(ws);
+  async handleClose(ws: WSClient) {
+    await this.removeFromLobbyAndDatabase(ws);
+  }
+
+  private updateLastSeen(ws: WSClient) {
+    const key = this.getParticipantKey(ws);
+    if (key && ws.data.lobbyCode) {
+      const existing = this.connectedParticipants.get(key);
+      if (existing) {
+        existing.lastSeen = Date.now();
+      }
+    }
+  }
+
+  private getParticipantKey(ws: WSClient): string | null {
+    if (ws.data.userId) return `user:${ws.data.userId}`;
+    if (ws.data.sessionToken) return `session:${ws.data.sessionToken}`;
+    return null;
   }
 
   private async handleLobbyJoin(ws: WSClient, lobbyCode: string, sessionToken?: string) {
-    // Try to authenticate via cookie or session token
-    let userId: string | null = null;
-
     if (sessionToken) {
       const participant = await lobbyManager.getParticipantByToken(sessionToken);
       if (participant) {
@@ -84,12 +119,24 @@ class WebSocketManager {
     }
     this.lobbySockets.get(ws.data.lobbyCode)!.add(ws);
 
+    // Track this participant as connected
+    const key = this.getParticipantKey(ws);
+    if (key) {
+      this.connectedParticipants.set(key, {
+        lobbyCode: ws.data.lobbyCode,
+        visitorId: ws.data.connectionId,
+        visitorUserId: ws.data.userId,
+        sessionToken: ws.data.sessionToken,
+        lastSeen: Date.now(),
+      });
+    }
+
     // Send current lobby state
     this.send(ws, { type: 'lobby:update', lobby });
   }
 
   private async handleLobbyLeave(ws: WSClient) {
-    this.removeFromLobby(ws);
+    await this.removeFromLobbyAndDatabase(ws);
   }
 
   private async handleReady(ws: WSClient, isReady: boolean) {
@@ -149,7 +196,73 @@ class WebSocketManager {
           this.lobbySockets.delete(ws.data.lobbyCode);
         }
       }
-      ws.data.lobbyCode = null;
+    }
+
+    // Remove from connected participants tracking
+    const key = this.getParticipantKey(ws);
+    if (key) {
+      this.connectedParticipants.delete(key);
+    }
+
+    ws.data.lobbyCode = null;
+  }
+
+  private async removeFromLobbyAndDatabase(ws: WSClient) {
+    const lobbyCode = ws.data.lobbyCode;
+    const userId = ws.data.userId;
+    const sessionToken = ws.data.sessionToken;
+
+    // Remove from in-memory tracking
+    this.removeFromLobby(ws);
+
+    // Remove from database if we have identification
+    if (lobbyCode && (userId || sessionToken)) {
+      try {
+        const updatedLobby = await lobbyManager.leaveLobby(lobbyCode, userId || undefined, sessionToken || undefined);
+        if (updatedLobby) {
+          // Broadcast to remaining participants
+          this.broadcastToLobby(lobbyCode, { type: 'lobby:update', lobby: updatedLobby });
+        }
+      } catch (error) {
+        // Host can't leave - that's fine, they just disconnected temporarily
+        console.log('User disconnected but not removed from lobby (may be host):', error);
+      }
+    }
+  }
+
+  private async cleanupStaleParticipants() {
+    const now = Date.now();
+    const staleKeys: string[] = [];
+
+    // Find stale connections
+    for (const [key, connection] of this.connectedParticipants) {
+      if (now - connection.lastSeen > this.STALE_TIMEOUT_MS) {
+        staleKeys.push(key);
+      }
+    }
+
+    // Remove stale participants
+    for (const key of staleKeys) {
+      const connection = this.connectedParticipants.get(key);
+      if (!connection) continue;
+
+      console.log(`Cleaning up stale participant: ${key} from lobby ${connection.lobbyCode}`);
+
+      this.connectedParticipants.delete(key);
+
+      try {
+        const updatedLobby = await lobbyManager.leaveLobby(
+          connection.lobbyCode,
+          connection.visitorUserId || undefined,
+          connection.sessionToken || undefined
+        );
+        if (updatedLobby) {
+          this.broadcastToLobby(connection.lobbyCode, { type: 'lobby:update', lobby: updatedLobby });
+        }
+      } catch (error) {
+        // Host can't leave - that's expected
+        console.log('Stale participant not removed (may be host):', error);
+      }
     }
   }
 
@@ -183,6 +296,13 @@ class WebSocketManager {
       this.broadcastToLobby(lobbyCode, { type: 'lobby:update', lobby });
     }
   }
+
+  // Check if a participant is currently connected
+  isParticipantConnected(userId?: string, sessionToken?: string): boolean {
+    if (userId && this.connectedParticipants.has(`user:${userId}`)) return true;
+    if (sessionToken && this.connectedParticipants.has(`session:${sessionToken}`)) return true;
+    return false;
+  }
 }
 
 export const wsManager = new WebSocketManager();
@@ -196,7 +316,7 @@ export const websocketHandlers = {
     const messageStr = typeof message === 'string' ? message : message.toString();
     wsManager.handleMessage(ws, messageStr);
   },
-  close(ws: WSClient) {
-    wsManager.handleClose(ws);
+  async close(ws: WSClient) {
+    await wsManager.handleClose(ws);
   },
 };
