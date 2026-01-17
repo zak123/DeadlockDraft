@@ -84,7 +84,7 @@ export function TeamPanel({
                     ? (newTeam) => onMoveToTeam(participant.id, newTeam)
                     : undefined
                 }
-                canManage={canManage && !isHost}
+                canManage={canManage}
               />
             );
           })
