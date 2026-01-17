@@ -1,0 +1,734 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "699a2722-1113-4dad-93e0-777a9f27853d",
+  "prevId": "a5e660f6-afeb-4adf-90f0-bf42c984930a",
+  "tables": {
+    "draft_configs": {
+      "name": "draft_configs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "lobby_id": {
+          "name": "lobby_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "skip_bans": {
+          "name": "skip_bans",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "phases": {
+          "name": "phases",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "time_per_pick": {
+          "name": "time_per_pick",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 30
+        },
+        "time_per_ban": {
+          "name": "time_per_ban",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 20
+        }
+      },
+      "indexes": {
+        "draft_configs_lobby_id_unique": {
+          "name": "draft_configs_lobby_id_unique",
+          "columns": [
+            "lobby_id"
+          ],
+          "isUnique": true
+        },
+        "draft_configs_lobby_id_idx": {
+          "name": "draft_configs_lobby_id_idx",
+          "columns": [
+            "lobby_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "draft_configs_lobby_id_lobbies_id_fk": {
+          "name": "draft_configs_lobby_id_lobbies_id_fk",
+          "tableFrom": "draft_configs",
+          "tableTo": "lobbies",
+          "columnsFrom": [
+            "lobby_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "draft_picks": {
+      "name": "draft_picks",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "draft_session_id": {
+          "name": "draft_session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "hero_id": {
+          "name": "hero_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "team": {
+          "name": "team",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pick_order": {
+          "name": "pick_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "picked_by": {
+          "name": "picked_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "picked_at": {
+          "name": "picked_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "draft_picks_draft_session_id_idx": {
+          "name": "draft_picks_draft_session_id_idx",
+          "columns": [
+            "draft_session_id"
+          ],
+          "isUnique": false
+        },
+        "draft_picks_hero_id_idx": {
+          "name": "draft_picks_hero_id_idx",
+          "columns": [
+            "hero_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "draft_picks_draft_session_id_draft_sessions_id_fk": {
+          "name": "draft_picks_draft_session_id_draft_sessions_id_fk",
+          "tableFrom": "draft_picks",
+          "tableTo": "draft_sessions",
+          "columnsFrom": [
+            "draft_session_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "draft_picks_picked_by_lobby_participants_id_fk": {
+          "name": "draft_picks_picked_by_lobby_participants_id_fk",
+          "tableFrom": "draft_picks",
+          "tableTo": "lobby_participants",
+          "columnsFrom": [
+            "picked_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "draft_sessions": {
+      "name": "draft_sessions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "lobby_id": {
+          "name": "lobby_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'pending'"
+        },
+        "current_phase_index": {
+          "name": "current_phase_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "current_team": {
+          "name": "current_team",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'amber'"
+        },
+        "current_pick_index": {
+          "name": "current_pick_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "turn_started_at": {
+          "name": "turn_started_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "draft_sessions_lobby_id_unique": {
+          "name": "draft_sessions_lobby_id_unique",
+          "columns": [
+            "lobby_id"
+          ],
+          "isUnique": true
+        },
+        "draft_sessions_lobby_id_idx": {
+          "name": "draft_sessions_lobby_id_idx",
+          "columns": [
+            "lobby_id"
+          ],
+          "isUnique": false
+        },
+        "draft_sessions_status_idx": {
+          "name": "draft_sessions_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "draft_sessions_lobby_id_lobbies_id_fk": {
+          "name": "draft_sessions_lobby_id_lobbies_id_fk",
+          "tableFrom": "draft_sessions",
+          "tableTo": "lobbies",
+          "columnsFrom": [
+            "lobby_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "lobbies": {
+      "name": "lobbies",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "host_user_id": {
+          "name": "host_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'waiting'"
+        },
+        "deadlock_party_code": {
+          "name": "deadlock_party_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deadlock_lobby_id": {
+          "name": "deadlock_lobby_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deadlock_match_id": {
+          "name": "deadlock_match_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "match_config": {
+          "name": "match_config",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "max_players": {
+          "name": "max_players",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 12
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "lobbies_code_unique": {
+          "name": "lobbies_code_unique",
+          "columns": [
+            "code"
+          ],
+          "isUnique": true
+        },
+        "lobbies_code_idx": {
+          "name": "lobbies_code_idx",
+          "columns": [
+            "code"
+          ],
+          "isUnique": false
+        },
+        "lobbies_status_idx": {
+          "name": "lobbies_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "lobbies_host_user_id_idx": {
+          "name": "lobbies_host_user_id_idx",
+          "columns": [
+            "host_user_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "lobbies_host_user_id_users_id_fk": {
+          "name": "lobbies_host_user_id_users_id_fk",
+          "tableFrom": "lobbies",
+          "tableTo": "users",
+          "columnsFrom": [
+            "host_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "lobby_participants": {
+      "name": "lobby_participants",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "lobby_id": {
+          "name": "lobby_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "anonymous_name": {
+          "name": "anonymous_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "session_token": {
+          "name": "session_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "team": {
+          "name": "team",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'unassigned'"
+        },
+        "is_ready": {
+          "name": "is_ready",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "lobby_participants_lobby_id_idx": {
+          "name": "lobby_participants_lobby_id_idx",
+          "columns": [
+            "lobby_id"
+          ],
+          "isUnique": false
+        },
+        "lobby_participants_user_id_idx": {
+          "name": "lobby_participants_user_id_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "lobby_participants_session_token_idx": {
+          "name": "lobby_participants_session_token_idx",
+          "columns": [
+            "session_token"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "lobby_participants_lobby_id_lobbies_id_fk": {
+          "name": "lobby_participants_lobby_id_lobbies_id_fk",
+          "tableFrom": "lobby_participants",
+          "tableTo": "lobbies",
+          "columnsFrom": [
+            "lobby_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "lobby_participants_user_id_users_id_fk": {
+          "name": "lobby_participants_user_id_users_id_fk",
+          "tableFrom": "lobby_participants",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "sessions": {
+      "name": "sessions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "sessions_user_id_idx": {
+          "name": "sessions_user_id_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "sessions_user_id_users_id_fk": {
+          "name": "sessions_user_id_users_id_fk",
+          "tableFrom": "sessions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "users": {
+      "name": "users",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "steam_id": {
+          "name": "steam_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "avatar_small": {
+          "name": "avatar_small",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "avatar_medium": {
+          "name": "avatar_medium",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "avatar_large": {
+          "name": "avatar_large",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "profile_url": {
+          "name": "profile_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "users_steam_id_unique": {
+          "name": "users_steam_id_unique",
+          "columns": [
+            "steam_id"
+          ],
+          "isUnique": true
+        },
+        "users_steam_id_idx": {
+          "name": "users_steam_id_idx",
+          "columns": [
+            "steam_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}
