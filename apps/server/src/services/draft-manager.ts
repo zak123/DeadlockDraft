@@ -225,11 +225,17 @@ export class DraftManager {
 
     const config = await this.getOrCreateDraftConfig(lobby.id);
 
-    // Ensure we have participants on both teams (unless single player mode is enabled)
-    if (!config.allowSinglePlayer) {
-      const amberPlayers = lobby.participants.filter(p => p.team === 'amber');
-      const sapphirePlayers = lobby.participants.filter(p => p.team === 'sapphire');
+    // Validate team composition
+    const amberPlayers = lobby.participants.filter(p => p.team === 'amber');
+    const sapphirePlayers = lobby.participants.filter(p => p.team === 'sapphire');
 
+    if (config.allowSinglePlayer) {
+      // Single player mode requires at least one player on at least one team
+      if (amberPlayers.length === 0 && sapphirePlayers.length === 0) {
+        throw new Error('At least one player must be on a team to start the draft');
+      }
+    } else {
+      // Normal mode requires both teams to have players
       if (amberPlayers.length === 0 || sapphirePlayers.length === 0) {
         throw new Error('Both teams must have at least one player to start the draft');
       }

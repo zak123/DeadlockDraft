@@ -9,6 +9,7 @@ interface DraftTimerProps {
   timerEnabled: boolean;
   currentPickInPhase: number;
   totalPicksInPhase: number;
+  remainingPicksInTurn: number;
 }
 
 export function DraftTimer({
@@ -19,6 +20,7 @@ export function DraftTimer({
   timerEnabled,
   currentPickInPhase,
   totalPicksInPhase,
+  remainingPicksInTurn,
 }: DraftTimerProps) {
   const teamName = currentTeam === 'amber' ? 'Team Amber' : 'Team Sapphire';
   const phaseText = currentPhaseType === 'pick' ? 'Pick' : 'Ban';
@@ -63,7 +65,7 @@ export function DraftTimer({
               : 'text-red-400 bg-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
           )}
         >
-          Your turn to {currentPhaseType}!
+          Your turn to {currentPhaseType} {remainingPicksInTurn > 1 ? `${remainingPicksInTurn} heroes` : ''}!
         </div>
       )}
       {timerEnabled ? (

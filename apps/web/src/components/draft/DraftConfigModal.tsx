@@ -154,9 +154,9 @@ export function DraftConfigModal({
 
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium">Single Player Testing</div>
+              <div className="font-medium">Single Player</div>
               <div className="text-sm text-deadlock-muted">
-                Allow starting draft without both teams filled
+                Draft alone with one player on a team
               </div>
             </div>
             <button

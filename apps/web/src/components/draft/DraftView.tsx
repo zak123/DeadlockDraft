@@ -262,6 +262,7 @@ export function DraftView({
         timerEnabled={config.timerEnabled}
         currentPickInPhase={currentPickInPhase}
         totalPicksInPhase={totalPicksInPhase}
+        remainingPicksInTurn={remainingPicksInTurn}
       />
 
       <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 items-start">
@@ -287,20 +288,6 @@ export function DraftView({
             maxSelections={remainingPicksInTurn}
           />
 
-          {isMyTurn && (
-            <div className="flex flex-col items-center gap-2 h-12">
-              {selectedHeroes.length === 0 && (
-                <div className="text-deadlock-muted">
-                  Select {remainingPicksInTurn > 1 ? `up to ${remainingPicksInTurn} heroes` : 'a hero'} to {currentPhaseType}
-                </div>
-              )}
-              {remainingPicksInTurn > 1 && selectedHeroes.length > 0 && selectedHeroes.length < remainingPicksInTurn && (
-                <div className="text-sm text-deadlock-muted">
-                  {remainingPicksInTurn - selectedHeroes.length} more selection{remainingPicksInTurn - selectedHeroes.length > 1 ? 's' : ''} available
-                </div>
-              )}
-            </div>
-          )}
 
           {!isMyTurn && session.status === 'active' && (
             <div className="text-center text-deadlock-muted">
