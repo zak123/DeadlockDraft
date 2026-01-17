@@ -34,8 +34,7 @@ function toDraftConfigShared(config: DraftConfig): SharedDraftConfig {
     lobbyId: config.lobbyId,
     skipBans: config.skipBans,
     phases: config.phases as DraftPhase[],
-    timePerPick: config.timePerPick,
-    timePerBan: config.timePerBan,
+    timePerTurn: config.timePerTurn,
     allowSinglePlayer: config.allowSinglePlayer,
     timerEnabled: config.timerEnabled,
   };
@@ -95,8 +94,7 @@ export class DraftManager {
           lobbyId,
           skipBans: false,
           phases: DEFAULT_PHASES,
-          timePerPick: 30,
-          timePerBan: 20,
+          timePerTurn: 30,
           allowSinglePlayer: false,
           timerEnabled: true,
         })
@@ -112,8 +110,7 @@ export class DraftManager {
     updates: {
       skipBans?: boolean;
       phases?: DraftPhase[];
-      timePerPick?: number;
-      timePerBan?: number;
+      timePerTurn?: number;
       allowSinglePlayer?: boolean;
       timerEnabled?: boolean;
     }
@@ -138,8 +135,7 @@ export class DraftManager {
           lobbyId,
           skipBans: updates.skipBans ?? false,
           phases: updates.phases ?? DEFAULT_PHASES,
-          timePerPick: updates.timePerPick ?? 30,
-          timePerBan: updates.timePerBan ?? 20,
+          timePerTurn: updates.timePerTurn ?? 30,
           allowSinglePlayer: updates.allowSinglePlayer ?? false,
           timerEnabled: updates.timerEnabled ?? true,
         })
@@ -148,8 +144,7 @@ export class DraftManager {
       const updateData: Partial<typeof draftConfigs.$inferInsert> = {};
       if (updates.skipBans !== undefined) updateData.skipBans = updates.skipBans;
       if (updates.phases !== undefined) updateData.phases = updates.phases;
-      if (updates.timePerPick !== undefined) updateData.timePerPick = updates.timePerPick;
-      if (updates.timePerBan !== undefined) updateData.timePerBan = updates.timePerBan;
+      if (updates.timePerTurn !== undefined) updateData.timePerTurn = updates.timePerTurn;
       if (updates.allowSinglePlayer !== undefined) updateData.allowSinglePlayer = updates.allowSinglePlayer;
       if (updates.timerEnabled !== undefined) updateData.timerEnabled = updates.timerEnabled;
 
@@ -186,8 +181,7 @@ export class DraftManager {
     const availableHeroes = HEROES.filter(h => !pickedHeroIds.includes(h));
 
     const now = Date.now();
-    const currentPhase = config.phases[session.currentPhaseIndex];
-    const timePerTurn = currentPhase?.type === 'ban' ? config.timePerBan : config.timePerPick;
+    const timePerTurn = config.timePerTurn;
     const elapsed = Math.floor((now - session.turnStartedAt) / 1000);
     const timeRemaining = Math.max(0, timePerTurn - elapsed);
 
@@ -526,7 +520,7 @@ export class DraftManager {
 
     if (updatedSession && updatedSession.status === 'active') {
       const config = await this.getOrCreateDraftConfig(lobbyId);
-      const timePerTurn = nextPhase.type === 'ban' ? config.timePerBan : config.timePerPick;
+      const timePerTurn = config.timePerTurn;
 
       wsManager.broadcastToLobby(lobbyCode, {
         type: 'draft:turn',
@@ -583,7 +577,7 @@ export class DraftManager {
       const currentPhase = phases[session.currentPhaseIndex];
       if (!currentPhase) return;
 
-      const timePerTurn = currentPhase.type === 'ban' ? latestConfig.timePerBan : latestConfig.timePerPick;
+      const timePerTurn = latestConfig.timePerTurn;
       const elapsed = Math.floor((Date.now() - session.turnStartedAt) / 1000);
 
       if (elapsed >= timePerTurn) {
@@ -608,6 +602,52 @@ export class DraftManager {
       clearTimeout(timer);
       this.turnTimers.delete(lobbyId);
     }
+  }
+
+  async cancelDraft(lobbyCode: string, hostUserId: string): Promise<void> {
+    const lobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.code, lobbyCode.toUpperCase()),
+    });
+
+    if (!lobby) {
+      throw new Error('Lobby not found');
+    }
+
+    if (lobby.hostUserId !== hostUserId) {
+      throw new Error('Only the host can cancel the draft');
+    }
+
+    const session = await db.query.draftSessions.findFirst({
+      where: eq(draftSessions.lobbyId, lobby.id),
+    });
+
+    if (!session) {
+      throw new Error('No draft session to cancel');
+    }
+
+    if (session.status === 'completed') {
+      throw new Error('Cannot cancel a completed draft');
+    }
+
+    // Clear the turn timer
+    this.clearTurnTimer(lobby.id);
+
+    // Delete all picks for this session
+    await db.delete(draftPicks).where(eq(draftPicks.draftSessionId, session.id));
+
+    // Delete the session
+    await db.delete(draftSessions).where(eq(draftSessions.id, session.id));
+
+    // Reset lobby status back to waiting
+    await db
+      .update(lobbies)
+      .set({ status: 'waiting', updatedAt: new Date().toISOString() })
+      .where(eq(lobbies.id, lobby.id));
+
+    // Broadcast draft cancellation
+    wsManager.broadcastToLobby(lobbyCode, {
+      type: 'draft:cancelled',
+    });
   }
 
   private async autoPickHero(

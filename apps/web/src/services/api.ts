@@ -184,6 +184,10 @@ class ApiClient {
     const result = await this.request<GetDraftStateResponse>(`/lobbies/${code}/draft/state`);
     return result.draftState;
   }
+
+  async cancelDraft(code: string): Promise<void> {
+    await this.request(`/lobbies/${code}/draft`, { method: 'DELETE' });
+  }
 }
 
 export const api = new ApiClient();

@@ -23,6 +23,7 @@ export function Lobby() {
     updateConfig,
     startDraft,
     makePick,
+    cancelDraft,
   } = useDraft(code || null);
 
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -55,6 +56,9 @@ export function Lobby() {
 
   // Check if draft is active
   const isDraftActive = draftState?.session.status === 'active' || draftState?.session.status === 'completed';
+
+  // Check if current user is host
+  const isHost = Boolean(user && lobby && lobby.hostUserId === user.id);
 
   // Auto-join for authenticated Steam users, show modal for guests
   useEffect(() => {
@@ -193,6 +197,8 @@ export function Lobby() {
               heroes={heroes}
               currentParticipant={currentParticipant}
               onMakePick={makePick}
+              isHost={isHost}
+              onCancelDraft={cancelDraft}
             />
           ) : (
             <LobbyView

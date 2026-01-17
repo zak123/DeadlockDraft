@@ -41,6 +41,9 @@ export function useDraft(lobbyCode: string | null) {
         case 'draft:completed':
           setDraftState(message.draftState);
           break;
+        case 'draft:cancelled':
+          setDraftState(null);
+          break;
       }
     };
 
@@ -160,6 +163,17 @@ export function useDraft(lobbyCode: string | null) {
     }
   }, [lobbyCode]);
 
+  const cancelDraft = useCallback(async () => {
+    if (!lobbyCode) return;
+    try {
+      await api.cancelDraft(lobbyCode);
+      setDraftState(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to cancel draft');
+      throw err;
+    }
+  }, [lobbyCode]);
+
   return {
     draftState,
     draftConfig,
@@ -170,5 +184,6 @@ export function useDraft(lobbyCode: string | null) {
     startDraft,
     makePick,
     refresh,
+    cancelDraft,
   };
 }

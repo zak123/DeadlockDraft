@@ -17,8 +17,7 @@ export function DraftConfigModal({
   onStartDraft,
 }: DraftConfigModalProps) {
   const [skipBans, setSkipBans] = useState(false);
-  const [timePerPick, setTimePerPick] = useState(30);
-  const [timePerBan, setTimePerBan] = useState(20);
+  const [timePerTurn, setTimePerTurn] = useState(30);
   const [allowSinglePlayer, setAllowSinglePlayer] = useState(false);
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,8 +27,7 @@ export function DraftConfigModal({
   useEffect(() => {
     if (config) {
       setSkipBans(config.skipBans);
-      setTimePerPick(config.timePerPick);
-      setTimePerBan(config.timePerBan);
+      setTimePerTurn(config.timePerTurn);
       setAllowSinglePlayer(config.allowSinglePlayer);
       setTimerEnabled(config.timerEnabled);
     }
@@ -40,7 +38,7 @@ export function DraftConfigModal({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave({ skipBans, timePerPick, timePerBan, allowSinglePlayer, timerEnabled });
+      await onSave({ skipBans, timePerTurn, allowSinglePlayer, timerEnabled });
     } finally {
       setSaving(false);
     }
@@ -109,37 +107,19 @@ export function DraftConfigModal({
           </div>
 
           {timerEnabled && (
-            <>
-              <div>
-                <label className="block font-medium mb-2">
-                  Time Per Pick (seconds)
-                </label>
-                <input
-                  type="number"
-                  min={10}
-                  max={120}
-                  value={timePerPick}
-                  onChange={(e) => setTimePerPick(Number(e.target.value))}
-                  className="w-full px-4 py-2 bg-deadlock-bg border border-deadlock-border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber"
-                />
-              </div>
-
-              {!skipBans && (
-                <div>
-                  <label className="block font-medium mb-2">
-                    Time Per Ban (seconds)
-                  </label>
-                  <input
-                    type="number"
-                    min={10}
-                    max={120}
-                    value={timePerBan}
-                    onChange={(e) => setTimePerBan(Number(e.target.value))}
-                    className="w-full px-4 py-2 bg-deadlock-bg border border-deadlock-border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber"
-                  />
-                </div>
-              )}
-            </>
+            <div>
+              <label className="block font-medium mb-2">
+                Time Per Turn (seconds)
+              </label>
+              <input
+                type="number"
+                min={10}
+                max={120}
+                value={timePerTurn}
+                onChange={(e) => setTimePerTurn(Number(e.target.value))}
+                className="w-full px-4 py-2 bg-deadlock-bg border border-deadlock-border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber"
+              />
+            </div>
           )}
 
           <div className="flex items-center justify-between">

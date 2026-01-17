@@ -132,7 +132,8 @@ export type WSServerMessage =
   | { type: 'draft:turn'; session: DraftSession; timeRemaining: number }
   | { type: 'draft:pick'; pick: DraftPick; draftState: DraftState }
   | { type: 'draft:completed'; draftState: DraftState }
-  | { type: 'draft:timeout'; autoPick: DraftPick; draftState: DraftState };
+  | { type: 'draft:timeout'; autoPick: DraftPick; draftState: DraftState }
+  | { type: 'draft:cancelled' };
 
 // Deadlock API types
 export interface DeadlockCreateMatchResponse {

@@ -33,6 +33,8 @@ export function LobbyView({
   const { user } = useAuth();
   const [creatingMatch, setCreatingMatch] = useState(false);
   const [showDraftConfig, setShowDraftConfig] = useState(false);
+  const [startingDraft, setStartingDraft] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
 
   const isHost = user?.id === lobby.hostUserId;
   const currentSessionToken = localStorage.getItem('anonymousSessionToken');
@@ -60,6 +62,18 @@ export function LobbyView({
       await onCreateMatch();
     } finally {
       setCreatingMatch(false);
+    }
+  };
+
+  const handleStartDraft = async () => {
+    setStartingDraft(true);
+    setDraftError(null);
+    try {
+      await onStartDraft();
+    } catch (err) {
+      setDraftError(err instanceof Error ? err.message : 'Failed to start draft');
+    } finally {
+      setStartingDraft(false);
     }
   };
 
@@ -187,19 +201,31 @@ export function LobbyView({
           </div>
 
           {isHost && !lobby.deadlockPartyCode && (
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => setShowDraftConfig(true)}
-              >
-                Configure Draft
-              </Button>
-              <Button
-                onClick={handleCreateMatch}
-                disabled={creatingMatch}
-              >
-                {creatingMatch ? 'Creating Match...' : 'Create Deadlock Match'}
-              </Button>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowDraftConfig(true)}
+                >
+                  Configure Draft
+                </Button>
+                <button
+                  onClick={handleStartDraft}
+                  disabled={startingDraft}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50"
+                >
+                  {startingDraft ? 'Starting...' : 'Start Draft'}
+                </button>
+                <Button
+                  onClick={handleCreateMatch}
+                  disabled={creatingMatch}
+                >
+                  {creatingMatch ? 'Creating Match...' : 'Create Deadlock Match'}
+                </Button>
+              </div>
+              {draftError && (
+                <div className="text-red-400 text-sm">{draftError}</div>
+              )}
             </div>
           )}
 

@@ -9,6 +9,8 @@ interface DraftViewProps {
   heroes: string[];
   currentParticipant: LobbyParticipant | null;
   onMakePick: (heroId: string) => void;
+  isHost: boolean;
+  onCancelDraft: () => Promise<void>;
 }
 
 export function DraftView({
@@ -16,9 +18,12 @@ export function DraftView({
   heroes,
   currentParticipant,
   onMakePick,
+  isHost,
+  onCancelDraft,
 }: DraftViewProps) {
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const { session, config, picks, availableHeroes, currentTurnTimeRemaining } = draftState;
 
@@ -29,6 +34,38 @@ export function DraftView({
     }
     return phases[session.currentPhaseIndex]?.type || 'pick';
   }, [config, session.currentPhaseIndex]);
+
+  const { currentPickInPhase, totalPicksInPhase } = useMemo(() => {
+    let phases = config.phases;
+    if (config.skipBans) {
+      phases = phases.filter((p) => p.type !== 'ban');
+    }
+    const currentPhase = phases[session.currentPhaseIndex];
+    if (!currentPhase) return { currentPickInPhase: 1, totalPicksInPhase: 1 };
+
+    const phasePicks = currentPhase.picks;
+    const currentIdx = session.currentPickIndex;
+    const currentTeam = session.currentTeam;
+
+    // Find the start and end of consecutive picks for current team
+    let startIdx = currentIdx;
+    let endIdx = currentIdx;
+
+    // Find start of consecutive run
+    while (startIdx > 0 && phasePicks[startIdx - 1] === currentTeam) {
+      startIdx--;
+    }
+
+    // Find end of consecutive run
+    while (endIdx < phasePicks.length - 1 && phasePicks[endIdx + 1] === currentTeam) {
+      endIdx++;
+    }
+
+    const total = endIdx - startIdx + 1;
+    const current = currentIdx - startIdx + 1;
+
+    return { currentPickInPhase: current, totalPicksInPhase: total };
+  }, [config, session.currentPhaseIndex, session.currentPickIndex, session.currentTeam]);
 
   const myTeam = currentParticipant?.team as DraftTeam | undefined;
   const isMyTurn = myTeam === session.currentTeam && session.status === 'active';
@@ -86,6 +123,16 @@ export function DraftView({
     setIsConfirming(false);
   }, [selectedHero, isMyTurn, onMakePick]);
 
+  const handleCancelDraft = useCallback(async () => {
+    if (!confirm('Are you sure you want to cancel the draft? All progress will be lost.')) return;
+    setIsCancelling(true);
+    try {
+      await onCancelDraft();
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [onCancelDraft]);
+
   if (session.status === 'completed') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[600px] gap-8">
@@ -114,12 +161,25 @@ export function DraftView({
 
   return (
     <div className="flex flex-col gap-4">
+      {isHost && (
+        <div className="flex justify-end">
+          <button
+            onClick={handleCancelDraft}
+            disabled={isCancelling}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            {isCancelling ? 'Cancelling...' : 'Cancel Draft'}
+          </button>
+        </div>
+      )}
       <DraftTimer
         currentTeam={session.currentTeam}
         currentPhaseType={currentPhaseType}
         timeRemaining={currentTurnTimeRemaining}
         isMyTurn={isMyTurn}
         timerEnabled={config.timerEnabled}
+        currentPickInPhase={currentPickInPhase}
+        totalPicksInPhase={totalPicksInPhase}
       />
 
       <div className="grid grid-cols-[1fr_2fr_1fr] gap-4">

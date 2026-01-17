@@ -80,8 +80,7 @@ export const draftConfigs = sqliteTable('draft_configs', {
     type: 'pick' | 'ban';
     picks: Array<'amber' | 'sapphire'>;
   }>>(),
-  timePerPick: integer('time_per_pick').notNull().default(30),
-  timePerBan: integer('time_per_ban').notNull().default(20),
+  timePerTurn: integer('time_per_turn').notNull().default(30),
   allowSinglePlayer: integer('allow_single_player', { mode: 'boolean' }).notNull().default(false),
   timerEnabled: integer('timer_enabled', { mode: 'boolean' }).notNull().default(true),
 }, (table) => ({

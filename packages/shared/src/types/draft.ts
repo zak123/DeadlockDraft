@@ -14,8 +14,7 @@ export interface DraftConfig {
   lobbyId: string;
   skipBans: boolean;
   phases: DraftPhase[];
-  timePerPick: number;
-  timePerBan: number;
+  timePerTurn: number;
   allowSinglePlayer: boolean;
   timerEnabled: boolean;
 }
@@ -55,8 +54,7 @@ export interface DraftState {
 export interface UpdateDraftConfigRequest {
   skipBans?: boolean;
   phases?: DraftPhase[];
-  timePerPick?: number;
-  timePerBan?: number;
+  timePerTurn?: number;
   allowSinglePlayer?: boolean;
   timerEnabled?: boolean;
 }
@@ -91,8 +89,7 @@ export const DEFAULT_DRAFT_PHASES: DraftPhase[] = [
   { type: 'pick', picks: ['sapphire', 'amber', 'amber', 'sapphire'] },
 ];
 
-export const DEFAULT_TIME_PER_PICK = 30;
-export const DEFAULT_TIME_PER_BAN = 20;
+export const DEFAULT_TIME_PER_TURN = 30;
 
 // WebSocket message types for draft
 export type WSDraftClientMessage =

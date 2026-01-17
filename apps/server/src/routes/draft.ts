@@ -26,8 +26,7 @@ const updateDraftConfigSchema = z.object({
       })
     )
     .optional(),
-  timePerPick: z.number().min(10).max(120).optional(),
-  timePerBan: z.number().min(10).max(120).optional(),
+  timePerTurn: z.number().min(10).max(120).optional(),
   allowSinglePlayer: z.boolean().optional(),
   timerEnabled: z.boolean().optional(),
 });
@@ -119,6 +118,22 @@ draft.post('/:code/draft/pick', optionalAuth, async (c) => {
       pick: draftState.picks[draftState.picks.length - 1],
       draftState,
     });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new HTTPException(400, { message: error.message });
+    }
+    throw error;
+  }
+});
+
+// Cancel draft (host only)
+draft.delete('/:code/draft', requireAuth, async (c) => {
+  const code = c.req.param('code');
+  const user = getAuthUser(c);
+
+  try {
+    await draftManager.cancelDraft(code, user.id);
+    return c.json({ success: true });
   } catch (error) {
     if (error instanceof Error) {
       throw new HTTPException(400, { message: error.message });
