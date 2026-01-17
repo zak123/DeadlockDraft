@@ -199,6 +199,7 @@ export function Lobby() {
               onMakePick={makePick}
               isHost={isHost}
               onCancelDraft={cancelDraft}
+              onCreateMatch={createMatch}
             />
           ) : (
             <LobbyView
@@ -206,7 +207,6 @@ export function Lobby() {
               draftConfig={draftConfig}
               onMoveToTeam={moveToTeam}
               onSetReady={setReady}
-              onCreateMatch={createMatch}
               onReadyMatch={readyMatch}
               onLeaveLobby={handleLeaveLobby}
               onCancelLobby={handleCancelLobby}

@@ -10,7 +10,6 @@ interface LobbyViewProps {
   draftConfig: DraftConfig | null;
   onMoveToTeam: (participantId: string, team: Team) => void;
   onSetReady: (isReady: boolean) => void;
-  onCreateMatch: () => Promise<unknown>;
   onReadyMatch: () => Promise<void>;
   onLeaveLobby: () => void;
   onCancelLobby: () => void;
@@ -23,7 +22,6 @@ export function LobbyView({
   draftConfig,
   onMoveToTeam,
   onSetReady,
-  onCreateMatch,
   onReadyMatch,
   onLeaveLobby,
   onCancelLobby,
@@ -31,7 +29,6 @@ export function LobbyView({
   onStartDraft,
 }: LobbyViewProps) {
   const { user } = useAuth();
-  const [creatingMatch, setCreatingMatch] = useState(false);
   const [showDraftConfig, setShowDraftConfig] = useState(false);
   const [startingDraft, setStartingDraft] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
@@ -55,15 +52,6 @@ export function LobbyView({
       unassigned: lobby.participants.filter((p) => p.team === 'unassigned'),
     };
   }, [lobby.participants]);
-
-  const handleCreateMatch = async () => {
-    setCreatingMatch(true);
-    try {
-      await onCreateMatch();
-    } finally {
-      setCreatingMatch(false);
-    }
-  };
 
   const handleStartDraft = async () => {
     setStartingDraft(true);
@@ -216,12 +204,6 @@ export function LobbyView({
                 >
                   {startingDraft ? 'Starting...' : 'Start Draft'}
                 </button>
-                <Button
-                  onClick={handleCreateMatch}
-                  disabled={creatingMatch}
-                >
-                  {creatingMatch ? 'Creating Match...' : 'Create Deadlock Match'}
-                </Button>
               </div>
               {draftError && (
                 <div className="text-red-400 text-sm">{draftError}</div>

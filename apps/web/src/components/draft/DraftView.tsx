@@ -11,6 +11,7 @@ interface DraftViewProps {
   onMakePick: (heroId: string) => void;
   isHost: boolean;
   onCancelDraft: () => Promise<void>;
+  onCreateMatch: () => Promise<unknown>;
 }
 
 export function DraftView({
@@ -20,10 +21,12 @@ export function DraftView({
   onMakePick,
   isHost,
   onCancelDraft,
+  onCreateMatch,
 }: DraftViewProps) {
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [creatingMatch, setCreatingMatch] = useState(false);
 
   const { session, config, picks, availableHeroes, currentTurnTimeRemaining } = draftState;
 
@@ -133,6 +136,15 @@ export function DraftView({
     }
   }, [onCancelDraft]);
 
+  const handleCreateMatch = useCallback(async () => {
+    setCreatingMatch(true);
+    try {
+      await onCreateMatch();
+    } finally {
+      setCreatingMatch(false);
+    }
+  }, [onCreateMatch]);
+
   if (session.status === 'completed') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[600px] gap-8">
@@ -155,6 +167,15 @@ export function DraftView({
             isCurrentTurn={false}
           />
         </div>
+        {isHost && (
+          <button
+            onClick={handleCreateMatch}
+            disabled={creatingMatch}
+            className="px-8 py-3 bg-amber hover:bg-amber/80 text-black rounded-lg font-bold text-lg transition-colors disabled:opacity-50"
+          >
+            {creatingMatch ? 'Creating Match...' : 'Create Deadlock Match'}
+          </button>
+        )}
       </div>
     );
   }
