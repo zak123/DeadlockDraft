@@ -6,6 +6,7 @@ interface DraftTimerProps {
   currentPhaseType: DraftPhaseType;
   timeRemaining: number;
   isMyTurn: boolean;
+  timerEnabled: boolean;
 }
 
 export function DraftTimer({
@@ -13,10 +14,11 @@ export function DraftTimer({
   currentPhaseType,
   timeRemaining,
   isMyTurn,
+  timerEnabled,
 }: DraftTimerProps) {
   const teamName = currentTeam === 'amber' ? 'Team Amber' : 'Team Sapphire';
   const phaseText = currentPhaseType === 'pick' ? 'Pick' : 'Ban';
-  const isLowTime = timeRemaining <= 10;
+  const isLowTime = timerEnabled && timeRemaining <= 10;
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -50,16 +52,24 @@ export function DraftTimer({
           Your turn to {currentPhaseType}!
         </div>
       )}
-      <div
-        className={clsx(
-          'text-5xl font-mono font-bold mt-2 transition-colors',
-          isLowTime ? 'text-red-500 animate-pulse' : 'text-white'
-        )}
-      >
-        {formatTime(timeRemaining)}
-      </div>
-      {isLowTime && (
-        <div className="text-red-400 text-sm">Hurry up!</div>
+      {timerEnabled ? (
+        <>
+          <div
+            className={clsx(
+              'text-5xl font-mono font-bold mt-2 transition-colors',
+              isLowTime ? 'text-red-500 animate-pulse' : 'text-white'
+            )}
+          >
+            {formatTime(timeRemaining)}
+          </div>
+          {isLowTime && (
+            <div className="text-red-400 text-sm">Hurry up!</div>
+          )}
+        </>
+      ) : (
+        <div className="text-xl text-deadlock-muted mt-2">
+          No Timer
+        </div>
       )}
     </div>
   );

@@ -119,6 +119,7 @@ export function DraftView({
         currentPhaseType={currentPhaseType}
         timeRemaining={currentTurnTimeRemaining}
         isMyTurn={isMyTurn}
+        timerEnabled={config.timerEnabled}
       />
 
       <div className="grid grid-cols-[1fr_2fr_1fr] gap-4">

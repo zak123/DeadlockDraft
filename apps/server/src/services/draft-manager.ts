@@ -37,6 +37,7 @@ function toDraftConfigShared(config: DraftConfig): SharedDraftConfig {
     timePerPick: config.timePerPick,
     timePerBan: config.timePerBan,
     allowSinglePlayer: config.allowSinglePlayer,
+    timerEnabled: config.timerEnabled,
   };
 }
 
@@ -97,6 +98,7 @@ export class DraftManager {
           timePerPick: 30,
           timePerBan: 20,
           allowSinglePlayer: false,
+          timerEnabled: true,
         })
         .returning();
     }
@@ -113,6 +115,7 @@ export class DraftManager {
       timePerPick?: number;
       timePerBan?: number;
       allowSinglePlayer?: boolean;
+      timerEnabled?: boolean;
     }
   ): Promise<SharedDraftConfig | null> {
     const lobby = await db.query.lobbies.findFirst({
@@ -138,6 +141,7 @@ export class DraftManager {
           timePerPick: updates.timePerPick ?? 30,
           timePerBan: updates.timePerBan ?? 20,
           allowSinglePlayer: updates.allowSinglePlayer ?? false,
+          timerEnabled: updates.timerEnabled ?? true,
         })
         .returning();
     } else {
@@ -147,6 +151,7 @@ export class DraftManager {
       if (updates.timePerPick !== undefined) updateData.timePerPick = updates.timePerPick;
       if (updates.timePerBan !== undefined) updateData.timePerBan = updates.timePerBan;
       if (updates.allowSinglePlayer !== undefined) updateData.allowSinglePlayer = updates.allowSinglePlayer;
+      if (updates.timerEnabled !== undefined) updateData.timerEnabled = updates.timerEnabled;
 
       [config] = await db
         .update(draftConfigs)
@@ -278,10 +283,78 @@ export class DraftManager {
       draftState,
     });
 
+    // If single player mode is enabled, check if starting team is empty and auto-pick
+    if (config.allowSinglePlayer) {
+      const startingTeamPlayers = lobby.participants.filter(p => p.team === startingTeam);
+      if (startingTeamPlayers.length === 0) {
+        await this.autoPickForEmptyTeam(lobbyCode, lobby.id, session.id, phases);
+        const updatedState = await this.getDraftState(lobby.id);
+        if (updatedState) {
+          return updatedState;
+        }
+      }
+    }
+
     // Start turn timer
     this.startTurnTimer(lobbyCode, lobby.id, session.id);
 
     return draftState;
+  }
+
+  private async autoPickForEmptyTeam(
+    lobbyCode: string,
+    lobbyId: string,
+    sessionId: string,
+    phases: DraftPhase[]
+  ): Promise<void> {
+    const session = await db.query.draftSessions.findFirst({
+      where: eq(draftSessions.id, sessionId),
+    });
+
+    if (!session || session.status !== 'active') return;
+
+    const currentPhase = phases[session.currentPhaseIndex];
+    if (!currentPhase) return;
+
+    // Get available heroes
+    const existingPicks = await db.query.draftPicks.findMany({
+      where: eq(draftPicks.draftSessionId, sessionId),
+    });
+
+    const pickedHeroIds = existingPicks.map(p => p.heroId);
+    const availableHeroes = HEROES.filter(h => !pickedHeroIds.includes(h));
+
+    if (availableHeroes.length === 0) return;
+
+    // Pick a random hero
+    const heroId = availableHeroes[Math.floor(Math.random() * availableHeroes.length)];
+    const pickOrder = existingPicks.length;
+
+    const [pick] = await db
+      .insert(draftPicks)
+      .values({
+        id: nanoid(),
+        draftSessionId: sessionId,
+        heroId,
+        team: currentPhase.type === 'pick' ? session.currentTeam : null,
+        type: currentPhase.type,
+        pickOrder,
+        pickedBy: null,
+        pickedAt: Date.now(),
+      })
+      .returning();
+
+    const draftState = await this.getDraftState(lobbyId);
+    if (draftState) {
+      wsManager.broadcastToLobby(lobbyCode, {
+        type: 'draft:pick',
+        pick: toDraftPickShared(pick),
+        draftState,
+      });
+    }
+
+    // Advance draft and check again for empty team
+    await this.advanceDraft(lobbyId, sessionId, phases, lobbyCode);
   }
 
   async makePick(
@@ -461,13 +534,36 @@ export class DraftManager {
         timeRemaining: timePerTurn,
       });
 
+      // If single player mode, check if next team is empty and auto-pick
+      if (config.allowSinglePlayer) {
+        const lobby = await db.query.lobbies.findFirst({
+          where: eq(lobbies.id, lobbyId),
+          with: { participants: true },
+        });
+
+        if (lobby) {
+          const nextTeamPlayers = lobby.participants.filter(p => p.team === nextTeam);
+          if (nextTeamPlayers.length === 0) {
+            // Auto-pick for empty team
+            await this.autoPickForEmptyTeam(lobbyCode, lobbyId, sessionId, phases);
+            return;
+          }
+        }
+      }
+
       // Start new turn timer
       this.startTurnTimer(lobbyCode, lobbyId, sessionId);
     }
   }
 
-  private startTurnTimer(lobbyCode: string, lobbyId: string, sessionId: string): void {
+  private async startTurnTimer(lobbyCode: string, lobbyId: string, sessionId: string): Promise<void> {
     this.clearTurnTimer(lobbyId);
+
+    // Check if timer is enabled
+    const config = await this.getOrCreateDraftConfig(lobbyId);
+    if (!config.timerEnabled) {
+      return; // Don't start timer if disabled
+    }
 
     const checkAndAutoPick = async () => {
       const session = await db.query.draftSessions.findFirst({
@@ -476,16 +572,18 @@ export class DraftManager {
 
       if (!session || session.status !== 'active') return;
 
-      const config = await this.getOrCreateDraftConfig(lobbyId);
-      let phases = config.phases;
-      if (config.skipBans) {
+      const latestConfig = await this.getOrCreateDraftConfig(lobbyId);
+      if (!latestConfig.timerEnabled) return; // Timer was disabled
+
+      let phases = latestConfig.phases;
+      if (latestConfig.skipBans) {
         phases = phases.filter(p => p.type !== 'ban');
       }
 
       const currentPhase = phases[session.currentPhaseIndex];
       if (!currentPhase) return;
 
-      const timePerTurn = currentPhase.type === 'ban' ? config.timePerBan : config.timePerPick;
+      const timePerTurn = currentPhase.type === 'ban' ? latestConfig.timePerBan : latestConfig.timePerPick;
       const elapsed = Math.floor((Date.now() - session.turnStartedAt) / 1000);
 
       if (elapsed >= timePerTurn) {

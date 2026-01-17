@@ -20,6 +20,7 @@ export function DraftConfigModal({
   const [timePerPick, setTimePerPick] = useState(30);
   const [timePerBan, setTimePerBan] = useState(20);
   const [allowSinglePlayer, setAllowSinglePlayer] = useState(false);
+  const [timerEnabled, setTimerEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +31,7 @@ export function DraftConfigModal({
       setTimePerPick(config.timePerPick);
       setTimePerBan(config.timePerBan);
       setAllowSinglePlayer(config.allowSinglePlayer);
+      setTimerEnabled(config.timerEnabled);
     }
   }, [config]);
 
@@ -38,7 +40,7 @@ export function DraftConfigModal({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave({ skipBans, timePerPick, timePerBan, allowSinglePlayer });
+      await onSave({ skipBans, timePerPick, timePerBan, allowSinglePlayer, timerEnabled });
     } finally {
       setSaving(false);
     }
@@ -85,34 +87,59 @@ export function DraftConfigModal({
             </button>
           </div>
 
-          <div>
-            <label className="block font-medium mb-2">
-              Time Per Pick (seconds)
-            </label>
-            <input
-              type="number"
-              min={10}
-              max={120}
-              value={timePerPick}
-              onChange={(e) => setTimePerPick(Number(e.target.value))}
-              className="w-full px-4 py-2 bg-deadlock-bg border border-deadlock-border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber"
-            />
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">Turn Timer</div>
+              <div className="text-sm text-deadlock-muted">
+                Auto-pick when time runs out
+              </div>
+            </div>
+            <button
+              onClick={() => setTimerEnabled(!timerEnabled)}
+              className={`w-14 h-8 rounded-full transition-colors ${
+                timerEnabled ? 'bg-amber' : 'bg-deadlock-border'
+              }`}
+            >
+              <div
+                className={`w-6 h-6 bg-white rounded-full transition-transform ${
+                  timerEnabled ? 'translate-x-7' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
 
-          {!skipBans && (
-            <div>
-              <label className="block font-medium mb-2">
-                Time Per Ban (seconds)
-              </label>
-              <input
-                type="number"
-                min={10}
-                max={120}
-                value={timePerBan}
-                onChange={(e) => setTimePerBan(Number(e.target.value))}
-                className="w-full px-4 py-2 bg-deadlock-bg border border-deadlock-border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber"
-              />
-            </div>
+          {timerEnabled && (
+            <>
+              <div>
+                <label className="block font-medium mb-2">
+                  Time Per Pick (seconds)
+                </label>
+                <input
+                  type="number"
+                  min={10}
+                  max={120}
+                  value={timePerPick}
+                  onChange={(e) => setTimePerPick(Number(e.target.value))}
+                  className="w-full px-4 py-2 bg-deadlock-bg border border-deadlock-border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber"
+                />
+              </div>
+
+              {!skipBans && (
+                <div>
+                  <label className="block font-medium mb-2">
+                    Time Per Ban (seconds)
+                  </label>
+                  <input
+                    type="number"
+                    min={10}
+                    max={120}
+                    value={timePerBan}
+                    onChange={(e) => setTimePerBan(Number(e.target.value))}
+                    className="w-full px-4 py-2 bg-deadlock-bg border border-deadlock-border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber"
+                  />
+                </div>
+              )}
+            </>
           )}
 
           <div className="flex items-center justify-between">

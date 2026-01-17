@@ -1,0 +1,1 @@
+ALTER TABLE `draft_configs` ADD `timer_enabled` integer DEFAULT true NOT NULL;

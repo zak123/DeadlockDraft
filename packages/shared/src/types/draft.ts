@@ -17,6 +17,7 @@ export interface DraftConfig {
   timePerPick: number;
   timePerBan: number;
   allowSinglePlayer: boolean;
+  timerEnabled: boolean;
 }
 
 export interface DraftSession {
@@ -57,6 +58,7 @@ export interface UpdateDraftConfigRequest {
   timePerPick?: number;
   timePerBan?: number;
   allowSinglePlayer?: boolean;
+  timerEnabled?: boolean;
 }
 
 export interface StartDraftResponse {
