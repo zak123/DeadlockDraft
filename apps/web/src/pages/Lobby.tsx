@@ -362,7 +362,7 @@ export function Lobby() {
                 isHost={isHost}
                 onCancelDraft={cancelDraft}
                 onCreateMatch={createMatch}
-                partyCode={partyCode}
+                partyCode={partyCode || lobby.deadlockPartyCode}
               />
               <LobbyChat
                 currentUserId={user?.id}

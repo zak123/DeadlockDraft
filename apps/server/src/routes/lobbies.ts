@@ -180,12 +180,34 @@ lobbies.post('/', requireAuth, async (c) => {
 });
 
 // Get lobby by code (public)
-lobbies.get('/:code', async (c) => {
+lobbies.get('/:code', optionalAuth, async (c) => {
   const code = c.req.param('code');
+  const user = c.get('user');
+  const sessionToken = c.req.header('X-Session-Token');
+
   const lobby = await lobbyManager.getLobbyByCode(code);
 
   if (!lobby) {
     throw new HTTPException(404, { message: 'Lobby not found' });
+  }
+
+  // For Twitch lobbies with a party code, verify the user is a participant
+  // This prevents random users from seeing the party code
+  if (lobby.isTwitchLobby && lobby.deadlockPartyCode) {
+    const isParticipant = lobby.participants.some(p =>
+      (user && p.userId === user.id) ||
+      (sessionToken && p.sessionToken === sessionToken)
+    );
+
+    if (!isParticipant) {
+      // Return lobby without the party code
+      return c.json({
+        lobby: {
+          ...lobby,
+          deadlockPartyCode: null,
+        },
+      });
+    }
   }
 
   return c.json({ lobby });

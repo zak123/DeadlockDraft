@@ -112,6 +112,24 @@ class WebSocketManager {
       return;
     }
 
+    // For Twitch lobbies with a party code, verify the user is a participant
+    // This prevents random users from seeing the party code via WebSocket
+    let lobbyToSend = lobby;
+    if (lobby.isTwitchLobby && lobby.deadlockPartyCode) {
+      const isParticipant = lobby.participants.some(p =>
+        (ws.data.userId && p.userId === ws.data.userId) ||
+        (ws.data.sessionToken && p.sessionToken === ws.data.sessionToken)
+      );
+
+      if (!isParticipant) {
+        // Send lobby without the party code
+        lobbyToSend = {
+          ...lobby,
+          deadlockPartyCode: null,
+        };
+      }
+    }
+
     // Remove from previous lobby if any
     this.removeFromLobby(ws);
 
@@ -136,7 +154,7 @@ class WebSocketManager {
     }
 
     // Send current lobby state
-    this.send(ws, { type: 'lobby:update', lobby });
+    this.send(ws, { type: 'lobby:update', lobby: lobbyToSend });
   }
 
   private async handleLobbyLeave(ws: WSClient) {
