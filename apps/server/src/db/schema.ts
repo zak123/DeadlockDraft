@@ -47,6 +47,7 @@ export const lobbies = sqliteTable('lobbies', {
   }>(),
   maxPlayers: integer('max_players').notNull().default(12),
   isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
+  allowTeamChange: integer('allow_team_change', { mode: 'boolean' }).notNull().default(false),
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString()),
   expiresAt: text('expires_at').notNull(),

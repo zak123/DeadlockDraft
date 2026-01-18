@@ -54,6 +54,7 @@ export interface Lobby {
   matchConfig: MatchConfig;
   maxPlayers: number;
   isPublic: boolean;
+  allowTeamChange: boolean;
   createdAt: string;
   updatedAt: string;
   expiresAt: string;
@@ -107,6 +108,7 @@ export interface UpdateLobbyRequest {
   name?: string;
   matchConfig?: Partial<MatchConfig>;
   maxPlayers?: number;
+  allowTeamChange?: boolean;
 }
 
 export interface MoveToTeamRequest {

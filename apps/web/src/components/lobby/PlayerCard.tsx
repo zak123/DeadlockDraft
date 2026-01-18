@@ -7,6 +7,7 @@ interface PlayerCardProps {
   isCurrentUser: boolean;
   onMoveToTeam?: (team: Team) => void;
   onSetCaptain?: (isCaptain: boolean) => void;
+  onChangeSelfTeam?: (team: Team) => Promise<void>;
   canManage: boolean;
   showCaptainControls: boolean;
 }
@@ -17,6 +18,7 @@ export function PlayerCard({
   isCurrentUser,
   onMoveToTeam,
   onSetCaptain,
+  onChangeSelfTeam,
   canManage,
   showCaptainControls,
 }: PlayerCardProps) {
@@ -106,6 +108,43 @@ export function PlayerCard({
               <svg className="w-4 h-4 text-deadlock-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </>
+        )}
+        {!canManage && onChangeSelfTeam && (
+          <>
+            <button
+              onClick={() => onChangeSelfTeam('amber')}
+              className="p-1 hover:bg-amber/20 rounded transition-colors"
+              title="Join Amber"
+            >
+              <div className="w-4 h-4 rounded-full bg-amber" />
+            </button>
+            <button
+              onClick={() => onChangeSelfTeam('sapphire')}
+              className="p-1 hover:bg-sapphire/20 rounded transition-colors"
+              title="Join Sapphire"
+            >
+              <div className="w-4 h-4 rounded-full bg-sapphire" />
+            </button>
+            <button
+              onClick={() => onChangeSelfTeam('spectator')}
+              className="p-1 hover:bg-deadlock-border rounded transition-colors"
+              title="Become Spectator"
+            >
+              <svg className="w-4 h-4 text-deadlock-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => onChangeSelfTeam('unassigned')}
+              className="p-1 hover:bg-deadlock-border rounded transition-colors"
+              title="Go to Unassigned"
+            >
+              <svg className="w-4 h-4 text-deadlock-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </button>
           </>

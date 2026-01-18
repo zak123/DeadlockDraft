@@ -133,6 +133,17 @@ class ApiClient {
     return result.lobby;
   }
 
+  async changeSelfTeam(code: string, team: Team): Promise<LobbyWithParticipants> {
+    const result = await this.request<{ lobby: LobbyWithParticipants }>(
+      `/lobbies/${code}/change-team`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ team }),
+      }
+    );
+    return result.lobby;
+  }
+
   async setCaptain(
     code: string,
     participantId: string,

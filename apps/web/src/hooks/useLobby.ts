@@ -149,6 +149,34 @@ export function useLobby(code: string | null) {
     [code]
   );
 
+  const changeSelfTeam = useCallback(
+    async (team: Team) => {
+      if (!code) return;
+      try {
+        const updatedLobby = await api.changeSelfTeam(code, team);
+        setLobby(updatedLobby);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to change team');
+        throw err;
+      }
+    },
+    [code]
+  );
+
+  const updateLobbySettings = useCallback(
+    async (settings: { allowTeamChange?: boolean }) => {
+      if (!code) return;
+      try {
+        const updatedLobby = await api.updateLobby(code, settings);
+        setLobby(updatedLobby);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to update lobby');
+        throw err;
+      }
+    },
+    [code]
+  );
+
   const createMatch = useCallback(async () => {
     if (!code) return;
     try {
@@ -180,6 +208,8 @@ export function useLobby(code: string | null) {
     sendChat,
     moveToTeam,
     setCaptain,
+    changeSelfTeam,
+    updateLobbySettings,
     createMatch,
     readyMatch,
   };

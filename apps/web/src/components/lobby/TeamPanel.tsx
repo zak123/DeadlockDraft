@@ -12,6 +12,8 @@ interface TeamPanelProps {
   currentSessionToken?: string;
   onMoveToTeam?: (participantId: string, team: Team) => void;
   onSetCaptain?: (participantId: string, isCaptain: boolean) => void;
+  onChangeSelfTeam?: (team: Team) => Promise<void>;
+  allowTeamChange?: boolean;
   canManage: boolean;
 }
 
@@ -48,6 +50,8 @@ export function TeamPanel({
   currentSessionToken,
   onMoveToTeam,
   onSetCaptain,
+  onChangeSelfTeam,
+  allowTeamChange,
   canManage,
 }: TeamPanelProps) {
   const colors = teamColors[team];
@@ -92,6 +96,7 @@ export function TeamPanel({
                     ? (isCaptain) => onSetCaptain(participant.id, isCaptain)
                     : undefined
                 }
+                onChangeSelfTeam={isCurrentUser && allowTeamChange ? onChangeSelfTeam : undefined}
                 canManage={canManage}
                 showCaptainControls={showCaptainControls}
               />

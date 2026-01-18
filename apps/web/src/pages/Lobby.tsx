@@ -17,7 +17,7 @@ export function Lobby() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { lobby, loading, error, setReady, moveToTeam, setCaptain, createMatch, readyMatch, refresh } = useLobby(code || null);
+  const { lobby, loading, error, setReady, moveToTeam, setCaptain, changeSelfTeam, updateLobbySettings, createMatch, readyMatch, refresh } = useLobby(code || null);
   const {
     draftState,
     draftConfig,
@@ -219,10 +219,12 @@ export function Lobby() {
                 draftConfig={draftConfig}
                 onMoveToTeam={moveToTeam}
                 onSetCaptain={setCaptain}
+                onChangeSelfTeam={changeSelfTeam}
                 onSetReady={setReady}
                 onReadyMatch={readyMatch}
                 onLeaveLobby={handleLeaveLobby}
                 onCancelLobby={handleCancelLobby}
+                onUpdateLobbySettings={updateLobbySettings}
                 onUpdateDraftConfig={updateConfig}
                 onStartDraft={startDraft}
               />

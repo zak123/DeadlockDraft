@@ -10,10 +10,12 @@ interface LobbyViewProps {
   draftConfig: DraftConfig | null;
   onMoveToTeam: (participantId: string, team: Team) => void;
   onSetCaptain: (participantId: string, isCaptain: boolean) => void;
+  onChangeSelfTeam: (team: Team) => Promise<void>;
   onSetReady: (isReady: boolean) => void;
   onReadyMatch: () => Promise<void>;
   onLeaveLobby: () => void;
   onCancelLobby: () => void;
+  onUpdateLobbySettings: (settings: { allowTeamChange?: boolean }) => Promise<void>;
   onUpdateDraftConfig: (updates: UpdateDraftConfigRequest) => Promise<DraftConfig | undefined>;
   onStartDraft: () => Promise<DraftState | undefined>;
 }
@@ -23,10 +25,12 @@ export function LobbyView({
   draftConfig,
   onMoveToTeam,
   onSetCaptain,
+  onChangeSelfTeam,
   onSetReady,
   onReadyMatch,
   onLeaveLobby,
   onCancelLobby,
+  onUpdateLobbySettings,
   onUpdateDraftConfig,
   onStartDraft,
 }: LobbyViewProps) {
@@ -185,6 +189,8 @@ export function LobbyView({
           currentSessionToken={currentSessionToken || undefined}
           onMoveToTeam={onMoveToTeam}
           onSetCaptain={onSetCaptain}
+          onChangeSelfTeam={onChangeSelfTeam}
+          allowTeamChange={lobby.allowTeamChange}
           canManage={isHost}
         />
         <TeamPanel
@@ -197,6 +203,8 @@ export function LobbyView({
           currentSessionToken={currentSessionToken || undefined}
           onMoveToTeam={onMoveToTeam}
           onSetCaptain={onSetCaptain}
+          onChangeSelfTeam={onChangeSelfTeam}
+          allowTeamChange={lobby.allowTeamChange}
           canManage={isHost}
         />
       </div>
@@ -211,6 +219,8 @@ export function LobbyView({
           currentUserId={user?.id}
           currentSessionToken={currentSessionToken || undefined}
           onMoveToTeam={onMoveToTeam}
+          onChangeSelfTeam={onChangeSelfTeam}
+          allowTeamChange={lobby.allowTeamChange}
           canManage={isHost}
         />
         <TeamPanel
@@ -222,6 +232,8 @@ export function LobbyView({
           currentUserId={user?.id}
           currentSessionToken={currentSessionToken || undefined}
           onMoveToTeam={onMoveToTeam}
+          onChangeSelfTeam={onChangeSelfTeam}
+          allowTeamChange={lobby.allowTeamChange}
           canManage={isHost}
         />
       </div>
@@ -242,7 +254,23 @@ export function LobbyView({
 
           {isHost && !lobby.deadlockPartyCode && (
             <div className="flex flex-col gap-2">
-              <div className="flex gap-2">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-sm text-deadlock-muted">Allow team changes</span>
+                  <button
+                    type="button"
+                    onClick={() => onUpdateLobbySettings({ allowTeamChange: !lobby.allowTeamChange })}
+                    className={`w-10 h-6 rounded-full transition-colors ${
+                      lobby.allowTeamChange ? 'bg-amber' : 'bg-deadlock-border'
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 bg-white rounded-full transition-transform ${
+                        lobby.allowTeamChange ? 'translate-x-5' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </label>
                 <Button
                   variant="secondary"
                   onClick={() => setShowDraftConfig(true)}

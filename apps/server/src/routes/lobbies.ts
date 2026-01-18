@@ -51,6 +51,7 @@ const updateLobbySchema = z.object({
     })
     .optional(),
   maxPlayers: z.number().min(2).max(24).optional(),
+  allowTeamChange: z.boolean().optional(),
 });
 
 const moveToTeamSchema = z.object({
@@ -155,6 +156,38 @@ lobbies.post('/:code/leave', optionalAuth, async (c) => {
     await wsManager.broadcastLobbyUpdate(code);
 
     return c.json({ success: true });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new HTTPException(400, { message: error.message });
+    }
+    throw error;
+  }
+});
+
+// Change own team (when allowTeamChange is enabled)
+lobbies.post('/:code/change-team', optionalAuth, async (c) => {
+  const code = c.req.param('code');
+  const user = c.get('user');
+  const sessionToken = c.req.header('x-session-token');
+  const body = await c.req.json<{ team: string }>();
+  const validated = moveToTeamSchema.parse(body);
+
+  try {
+    const lobby = await lobbyManager.changeSelfTeam(
+      code,
+      validated.team as 'amber' | 'sapphire' | 'spectator' | 'unassigned',
+      user?.id,
+      sessionToken || undefined
+    );
+
+    if (!lobby) {
+      throw new HTTPException(404, { message: 'Lobby not found' });
+    }
+
+    // Broadcast update
+    await wsManager.broadcastLobbyUpdate(code);
+
+    return c.json({ lobby });
   } catch (error) {
     if (error instanceof Error) {
       throw new HTTPException(400, { message: error.message });
