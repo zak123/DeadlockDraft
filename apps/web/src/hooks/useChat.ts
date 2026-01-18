@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { wsClient } from '../services/websocket';
-import type { WSServerMessage } from '@deadlock-draft/shared';
+import type { WSServerMessage, ChatChannel, Team } from '@deadlock-draft/shared';
 
 export interface ChatMessage {
   id: string;
   senderId: string;
   senderName: string;
+  senderTeam?: Team;
   message: string;
   timestamp: string;
   isSystem: boolean;
+  channel: ChatChannel;
 }
 
 export function useChat() {
@@ -21,9 +23,11 @@ export function useChat() {
           id: `${message.timestamp}-${message.senderId}-${Math.random()}`,
           senderId: message.senderId,
           senderName: message.senderName,
+          senderTeam: message.senderTeam,
           message: message.message,
           timestamp: message.timestamp,
-          isSystem: message.senderId === 'system',
+          isSystem: message.isSystem || message.senderId === 'system',
+          channel: message.channel,
         };
         setMessages((prev) => [...prev.slice(-99), chatMessage]); // Keep last 100 messages
       }
@@ -35,9 +39,9 @@ export function useChat() {
     };
   }, []);
 
-  const sendMessage = useCallback((message: string) => {
+  const sendMessage = useCallback((message: string, channel: ChatChannel = 'all') => {
     if (message.trim()) {
-      wsClient.sendChat(message.trim());
+      wsClient.sendChat(message.trim(), channel);
     }
   }, []);
 

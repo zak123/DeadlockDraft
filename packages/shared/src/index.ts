@@ -202,12 +202,15 @@ export interface AuthResponse {
   user: User;
 }
 
+// Chat channel type
+export type ChatChannel = 'all' | 'team';
+
 // WebSocket message types
 export type WSClientMessage =
   | { type: 'lobby:join'; lobbyCode: string; sessionToken?: string }
   | { type: 'lobby:leave' }
   | { type: 'lobby:ready'; isReady: boolean }
-  | { type: 'lobby:chat'; message: string }
+  | { type: 'lobby:chat'; message: string; channel?: ChatChannel }
   | { type: 'draft:pick'; heroId: string };
 
 export type WSServerMessage =
@@ -217,7 +220,7 @@ export type WSServerMessage =
   | { type: 'lobby:participant-updated'; participant: LobbyParticipant }
   | { type: 'lobby:match-created'; partyCode: string }
   | { type: 'lobby:match-starting'; matchId: string }
-  | { type: 'lobby:chat'; senderId: string; senderName: string; message: string; timestamp: string }
+  | { type: 'lobby:chat'; senderId: string; senderName: string; senderTeam?: Team; message: string; timestamp: string; channel: ChatChannel; isSystem?: boolean }
   | { type: 'error'; message: string }
   | { type: 'connected'; connectionId: string }
   | { type: 'draft:started'; draftState: DraftState }

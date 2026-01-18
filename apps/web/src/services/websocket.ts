@@ -1,4 +1,4 @@
-import type { WSClientMessage, WSServerMessage } from '@deadlock-draft/shared';
+import type { WSClientMessage, WSServerMessage, ChatChannel } from '@deadlock-draft/shared';
 
 type MessageHandler = (message: WSServerMessage) => void;
 
@@ -109,8 +109,8 @@ class WebSocketClient {
     this.send({ type: 'lobby:ready', isReady });
   }
 
-  sendChat(message: string) {
-    this.send({ type: 'lobby:chat', message });
+  sendChat(message: string, channel: ChatChannel = 'all') {
+    this.send({ type: 'lobby:chat', message, channel });
   }
 
   makeDraftPick(heroId: string) {

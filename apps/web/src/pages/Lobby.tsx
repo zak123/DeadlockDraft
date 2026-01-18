@@ -380,6 +380,8 @@ export function Lobby() {
                 }
                 messages={chatMessages}
                 sendMessage={sendChatMessage}
+                isDraftActive={true}
+                currentTeam={currentParticipant?.team}
               />
             </div>
           ) : (

@@ -1,5 +1,5 @@
 import type { ServerWebSocket } from 'bun';
-import type { WSClientMessage, WSServerMessage, LobbyWithParticipants, WaitlistEntry, LobbyParticipant } from '@deadlock-draft/shared';
+import type { WSClientMessage, WSServerMessage, LobbyWithParticipants, WaitlistEntry, LobbyParticipant, ChatChannel, Team } from '@deadlock-draft/shared';
 import { lobbyManager } from './lobby-manager';
 import { draftManager } from './draft-manager';
 import { db, sessions, lobbyParticipants } from '../db';
@@ -65,7 +65,7 @@ class WebSocketManager {
           await this.handleReady(ws, data.isReady);
           break;
         case 'lobby:chat':
-          await this.handleChat(ws, data.message);
+          await this.handleChat(ws, data.message, data.channel);
           break;
         case 'draft:pick':
           await this.handleDraftPick(ws, data.heroId);
@@ -179,7 +179,7 @@ class WebSocketManager {
     }
   }
 
-  private async handleChat(ws: WSClient, message: string) {
+  private async handleChat(ws: WSClient, message: string, channel: ChatChannel = 'all') {
     if (!ws.data.lobbyCode) {
       this.send(ws, { type: 'error', message: 'Not in a lobby' });
       return;
@@ -194,6 +194,7 @@ class WebSocketManager {
 
     let senderId = 'unknown';
     let senderName = 'Anonymous';
+    let senderTeam: Team | undefined;
 
     // Find participant in lobby
     const participant = lobby.participants.find(p =>
@@ -204,15 +205,26 @@ class WebSocketManager {
     if (participant) {
       senderId = participant.id;
       senderName = participant.user?.displayName || participant.anonymousName || 'Anonymous';
+      senderTeam = participant.team;
     }
 
-    this.broadcastToLobby(ws.data.lobbyCode, {
+    const chatMessage: WSServerMessage = {
       type: 'lobby:chat',
       senderId,
       senderName,
+      senderTeam,
       message: message.slice(0, 500), // Limit message length
       timestamp: new Date().toISOString(),
-    });
+      channel,
+    };
+
+    if (channel === 'team' && senderTeam && (senderTeam === 'amber' || senderTeam === 'sapphire')) {
+      // Team chat - only send to team members
+      this.broadcastToTeam(ws.data.lobbyCode, senderTeam, chatMessage, lobby.participants);
+    } else {
+      // All chat - send to everyone
+      this.broadcastToLobby(ws.data.lobbyCode, chatMessage);
+    }
   }
 
   private async handleDraftPick(ws: WSClient, heroId: string) {
@@ -409,6 +421,39 @@ class WebSocketManager {
     }
   }
 
+  // Broadcast to team members only
+  private broadcastToTeam(lobbyCode: string, team: Team, message: WSServerMessage, participants: LobbyParticipant[]) {
+    const sockets = this.lobbySockets.get(lobbyCode.toUpperCase());
+    if (!sockets) return;
+
+    // Get user IDs and session tokens for team members
+    const teamMemberIds = new Set<string>();
+    const teamMemberTokens = new Set<string>();
+
+    for (const p of participants) {
+      if (p.team === team) {
+        if (p.userId) teamMemberIds.add(p.userId);
+        if (p.sessionToken) teamMemberTokens.add(p.sessionToken);
+      }
+    }
+
+    const messageStr = JSON.stringify(message);
+    for (const ws of sockets) {
+      // Check if this socket belongs to a team member
+      const isTeamMember =
+        (ws.data.userId && teamMemberIds.has(ws.data.userId)) ||
+        (ws.data.sessionToken && teamMemberTokens.has(ws.data.sessionToken));
+
+      if (isTeamMember) {
+        try {
+          ws.send(messageStr);
+        } catch (error) {
+          console.error('WebSocket team broadcast error:', error);
+        }
+      }
+    }
+  }
+
   // Broadcast lobby update after API changes
   async broadcastLobbyUpdate(lobbyCode: string) {
     const lobby = await lobbyManager.getLobbyByCode(lobbyCode);
@@ -424,7 +469,7 @@ class WebSocketManager {
     return false;
   }
 
-  // Broadcast a system chat message (for picks/bans)
+  // Broadcast a system chat message (for picks/bans) - goes to all channels
   broadcastSystemMessage(lobbyCode: string, message: string) {
     this.broadcastToLobby(lobbyCode, {
       type: 'lobby:chat',
@@ -432,6 +477,8 @@ class WebSocketManager {
       senderName: 'System',
       message,
       timestamp: new Date().toISOString(),
+      channel: 'all',
+      isSystem: true,
     });
   }
 
