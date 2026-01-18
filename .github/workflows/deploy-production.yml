@@ -45,9 +45,9 @@ jobs:
             echo "Installing dependencies..."
             bun install
 
-            # Run database migrations
-            echo "Running database migrations..."
-            cd apps/server && bunx drizzle-kit migrate && cd ../..
+            # Sync database schema (timeout ensures CI fails if interactive prompt appears)
+            echo "Syncing database schema..."
+            cd apps/server && timeout 30 bunx drizzle-kit push --force && cd ../..
 
             # Build frontend
             echo "Building frontend..."
