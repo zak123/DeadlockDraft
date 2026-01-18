@@ -239,6 +239,17 @@ export class DraftManager {
       if (amberPlayers.length === 0 || sapphirePlayers.length === 0) {
         throw new Error('Both teams must have at least one player to start the draft');
       }
+
+      // Validate captains - each team must have exactly one captain
+      const amberCaptain = amberPlayers.find(p => p.isCaptain);
+      const sapphireCaptain = sapphirePlayers.find(p => p.isCaptain);
+
+      if (!amberCaptain) {
+        throw new Error('Team Amber must have a captain assigned');
+      }
+      if (!sapphireCaptain) {
+        throw new Error('Team Sapphire must have a captain assigned');
+      }
     }
 
     // Filter phases based on skipBans
@@ -408,6 +419,11 @@ export class DraftManager {
     // Check if it's their team's turn
     if (participant.team !== session.currentTeam) {
       throw new Error(`It's ${session.currentTeam}'s turn to pick`);
+    }
+
+    // Check if participant is captain (required unless single player mode)
+    if (!config.allowSinglePlayer && !participant.isCaptain) {
+      throw new Error('Only the team captain can make picks');
     }
 
     // Verify hero is available

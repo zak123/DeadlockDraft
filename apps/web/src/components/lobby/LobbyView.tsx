@@ -9,6 +9,7 @@ interface LobbyViewProps {
   lobby: LobbyWithParticipants;
   draftConfig: DraftConfig | null;
   onMoveToTeam: (participantId: string, team: Team) => void;
+  onSetCaptain: (participantId: string, isCaptain: boolean) => void;
   onSetReady: (isReady: boolean) => void;
   onReadyMatch: () => Promise<void>;
   onLeaveLobby: () => void;
@@ -21,6 +22,7 @@ export function LobbyView({
   lobby,
   draftConfig,
   onMoveToTeam,
+  onSetCaptain,
   onSetReady,
   onReadyMatch,
   onLeaveLobby,
@@ -157,6 +159,7 @@ export function LobbyView({
           currentUserId={user?.id}
           currentSessionToken={currentSessionToken || undefined}
           onMoveToTeam={onMoveToTeam}
+          onSetCaptain={onSetCaptain}
           canManage={isHost}
         />
         <TeamPanel
@@ -168,6 +171,7 @@ export function LobbyView({
           currentUserId={user?.id}
           currentSessionToken={currentSessionToken || undefined}
           onMoveToTeam={onMoveToTeam}
+          onSetCaptain={onSetCaptain}
           canManage={isHost}
         />
       </div>

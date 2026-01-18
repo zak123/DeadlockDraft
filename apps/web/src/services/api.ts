@@ -7,6 +7,7 @@ import type {
   JoinLobbyResponse,
   UpdateLobbyRequest,
   MoveToTeamRequest,
+  SetCaptainRequest,
   Team,
   ApiError,
   DraftConfig,
@@ -127,6 +128,21 @@ class ApiClient {
       {
         method: 'PATCH',
         body: JSON.stringify({ team } as MoveToTeamRequest),
+      }
+    );
+    return result.lobby;
+  }
+
+  async setCaptain(
+    code: string,
+    participantId: string,
+    isCaptain: boolean
+  ): Promise<LobbyWithParticipants> {
+    const result = await this.request<{ lobby: LobbyWithParticipants }>(
+      `/lobbies/${code}/participants/${participantId}/captain`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ isCaptain } as SetCaptainRequest),
       }
     );
     return result.lobby;

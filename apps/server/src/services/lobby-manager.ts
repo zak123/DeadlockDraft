@@ -46,6 +46,7 @@ function toLobbyWithParticipants(
       sessionToken: null, // Never expose session tokens
       team: p.team as Team,
       isReady: p.isReady,
+      isCaptain: p.isCaptain,
       joinedAt: p.joinedAt,
       user: p.user ? toPublicUser(p.user) : null,
     })),
@@ -303,6 +304,70 @@ export class LobbyManager {
     );
 
     return toLobbyWithParticipants(lobby, updatedParticipants, lobby.host);
+  }
+
+  async setParticipantCaptain(
+    code: string,
+    hostUserId: string,
+    participantId: string,
+    isCaptain: boolean
+  ): Promise<LobbyWithParticipants | null> {
+    const lobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.code, code.toUpperCase()),
+      with: {
+        host: true,
+        participants: {
+          with: { user: true },
+        },
+      },
+    });
+
+    if (!lobby) return null;
+    if (lobby.hostUserId !== hostUserId) {
+      throw new Error('Only the host can assign captains');
+    }
+
+    const participant = lobby.participants.find((p) => p.id === participantId);
+    if (!participant) {
+      throw new Error('Participant not found');
+    }
+
+    // Captains must be on a team (amber or sapphire)
+    if (isCaptain && participant.team !== 'amber' && participant.team !== 'sapphire') {
+      throw new Error('Captains must be assigned to a team first');
+    }
+
+    // If setting as captain, remove captain status from any other player on the same team
+    if (isCaptain) {
+      const existingCaptain = lobby.participants.find(
+        (p) => p.team === participant.team && p.isCaptain && p.id !== participantId
+      );
+      if (existingCaptain) {
+        await db
+          .update(lobbyParticipants)
+          .set({ isCaptain: false })
+          .where(eq(lobbyParticipants.id, existingCaptain.id));
+      }
+    }
+
+    await db
+      .update(lobbyParticipants)
+      .set({ isCaptain })
+      .where(eq(lobbyParticipants.id, participantId));
+
+    // Fetch updated participants
+    const updatedLobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.id, lobby.id),
+      with: {
+        host: true,
+        participants: {
+          with: { user: true },
+        },
+      },
+    });
+
+    if (!updatedLobby) return null;
+    return toLobbyWithParticipants(updatedLobby, updatedLobby.participants, updatedLobby.host);
   }
 
   async setParticipantReady(

@@ -11,6 +11,7 @@ interface TeamPanelProps {
   currentUserId?: string;
   currentSessionToken?: string;
   onMoveToTeam?: (participantId: string, team: Team) => void;
+  onSetCaptain?: (participantId: string, isCaptain: boolean) => void;
   canManage: boolean;
 }
 
@@ -46,9 +47,11 @@ export function TeamPanel({
   currentUserId,
   currentSessionToken,
   onMoveToTeam,
+  onSetCaptain,
   canManage,
 }: TeamPanelProps) {
   const colors = teamColors[team];
+  const showCaptainControls = team === 'amber' || team === 'sapphire';
 
   return (
     <div className={clsx('rounded-xl border p-4', colors.bg, colors.border)}>
@@ -84,7 +87,13 @@ export function TeamPanel({
                     ? (newTeam) => onMoveToTeam(participant.id, newTeam)
                     : undefined
                 }
+                onSetCaptain={
+                  onSetCaptain
+                    ? (isCaptain) => onSetCaptain(participant.id, isCaptain)
+                    : undefined
+                }
                 canManage={canManage}
+                showCaptainControls={showCaptainControls}
               />
             );
           })

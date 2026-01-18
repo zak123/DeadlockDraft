@@ -65,6 +65,7 @@ export const lobbyParticipants = sqliteTable('lobby_participants', {
   sessionToken: text('session_token'),
   team: text('team', { enum: ['amber', 'sapphire', 'spectator', 'unassigned'] }).notNull().default('unassigned'),
   isReady: integer('is_ready', { mode: 'boolean' }).notNull().default(false),
+  isCaptain: integer('is_captain', { mode: 'boolean' }).notNull().default(false),
   joinedAt: text('joined_at').notNull().$defaultFn(() => new Date().toISOString()),
 }, (table) => ({
   lobbyIdIdx: index('lobby_participants_lobby_id_idx').on(table.lobbyId),

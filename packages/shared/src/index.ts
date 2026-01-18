@@ -67,6 +67,7 @@ export interface LobbyParticipant {
   sessionToken: string | null;
   team: Team;
   isReady: boolean;
+  isCaptain: boolean;
   joinedAt: string;
   user?: PublicUser | null;
 }
@@ -110,6 +111,10 @@ export interface UpdateLobbyRequest {
 
 export interface MoveToTeamRequest {
   team: Team;
+}
+
+export interface SetCaptainRequest {
+  isCaptain: boolean;
 }
 
 export interface AuthResponse {

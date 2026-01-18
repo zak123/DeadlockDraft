@@ -136,6 +136,19 @@ export function useLobby(code: string | null) {
     [code]
   );
 
+  const setCaptain = useCallback(
+    async (participantId: string, isCaptain: boolean) => {
+      if (!code) return;
+      try {
+        const updatedLobby = await api.setCaptain(code, participantId, isCaptain);
+        setLobby(updatedLobby);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to set captain');
+      }
+    },
+    [code]
+  );
+
   const createMatch = useCallback(async () => {
     if (!code) return;
     try {
@@ -166,6 +179,7 @@ export function useLobby(code: string | null) {
     setReady,
     sendChat,
     moveToTeam,
+    setCaptain,
     createMatch,
     readyMatch,
   };

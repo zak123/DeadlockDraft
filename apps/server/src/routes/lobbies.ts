@@ -57,6 +57,10 @@ const moveToTeamSchema = z.object({
   team: z.enum(['amber', 'sapphire', 'spectator', 'unassigned']),
 });
 
+const setCaptainSchema = z.object({
+  isCaptain: z.boolean(),
+});
+
 // Get public lobbies
 lobbies.get('/public', async (c) => {
   const publicLobbies = await lobbyManager.getPublicLobbies();
@@ -219,6 +223,38 @@ lobbies.patch('/:code/participants/:participantId/team', requireAuth, async (c) 
       user.id,
       participantId,
       validated.team as Team
+    );
+
+    if (!lobby) {
+      throw new HTTPException(404, { message: 'Lobby not found' });
+    }
+
+    // Broadcast update
+    await wsManager.broadcastLobbyUpdate(code);
+
+    return c.json({ lobby });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new HTTPException(400, { message: error.message });
+    }
+    throw error;
+  }
+});
+
+// Set participant captain status (host only)
+lobbies.patch('/:code/participants/:participantId/captain', requireAuth, async (c) => {
+  const code = c.req.param('code');
+  const participantId = c.req.param('participantId');
+  const user = getAuthUser(c);
+  const body = await c.req.json();
+  const validated = setCaptainSchema.parse(body);
+
+  try {
+    const lobby = await lobbyManager.setParticipantCaptain(
+      code,
+      user.id,
+      participantId,
+      validated.isCaptain
     );
 
     if (!lobby) {
