@@ -18,7 +18,6 @@ export function DraftConfigModal({
   const [timePerTurn, setTimePerTurn] = useState(60);
   const [allowSinglePlayer, setAllowSinglePlayer] = useState(false);
   const [timerEnabled, setTimerEnabled] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isInitialLoad = useRef(true);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -38,13 +37,10 @@ export function DraftConfigModal({
   }, [config]);
 
   const autoSave = useCallback(async (updates: UpdateDraftConfigRequest) => {
-    setSaving(true);
     try {
       await onSave(updates);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save settings');
-    } finally {
-      setSaving(false);
     }
   }, [onSave]);
 
