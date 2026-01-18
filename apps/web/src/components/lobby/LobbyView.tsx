@@ -254,23 +254,7 @@ export function LobbyView({
 
           {isHost && !lobby.deadlockPartyCode && (
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-sm text-deadlock-muted">Allow team changes</span>
-                  <button
-                    type="button"
-                    onClick={() => onUpdateLobbySettings({ allowTeamChange: !lobby.allowTeamChange })}
-                    className={`w-10 h-6 rounded-full transition-colors ${
-                      lobby.allowTeamChange ? 'bg-amber' : 'bg-deadlock-border'
-                    }`}
-                  >
-                    <div
-                      className={`w-4 h-4 bg-white rounded-full transition-transform ${
-                        lobby.allowTeamChange ? 'translate-x-5' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </label>
+              <div className="flex items-center gap-2">
                 <Button
                   variant="secondary"
                   onClick={() => setShowDraftConfig(true)}
@@ -303,7 +287,9 @@ export function LobbyView({
         isOpen={showDraftConfig}
         onClose={() => setShowDraftConfig(false)}
         config={draftConfig}
+        allowTeamChange={lobby.allowTeamChange}
         onSave={onUpdateDraftConfig}
+        onUpdateLobbySettings={onUpdateLobbySettings}
       />
     </div>
   );

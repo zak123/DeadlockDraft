@@ -5,14 +5,18 @@ interface DraftConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
   config: DraftConfig | null;
+  allowTeamChange: boolean;
   onSave: (updates: UpdateDraftConfigRequest) => Promise<DraftConfig | undefined>;
+  onUpdateLobbySettings: (settings: { allowTeamChange?: boolean }) => Promise<void>;
 }
 
 export function DraftConfigModal({
   isOpen,
   onClose,
   config,
+  allowTeamChange,
   onSave,
+  onUpdateLobbySettings,
 }: DraftConfigModalProps) {
   const [skipBans, setSkipBans] = useState(false);
   const [timePerTurn, setTimePerTurn] = useState(60);
@@ -148,6 +152,27 @@ export function DraftConfigModal({
               <div
                 className={`w-6 h-6 bg-white rounded-full transition-transform ${
                   allowSinglePlayer ? 'translate-x-7' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">Allow Team Changes</div>
+              <div className="text-sm text-deadlock-muted">
+                Let players change their own team
+              </div>
+            </div>
+            <button
+              onClick={() => onUpdateLobbySettings({ allowTeamChange: !allowTeamChange })}
+              className={`w-14 h-8 rounded-full transition-colors ${
+                allowTeamChange ? 'bg-amber' : 'bg-deadlock-border'
+              }`}
+            >
+              <div
+                className={`w-6 h-6 bg-white rounded-full transition-transform ${
+                  allowTeamChange ? 'translate-x-7' : 'translate-x-1'
                 }`}
               />
             </button>
