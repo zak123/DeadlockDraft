@@ -20,7 +20,6 @@ export function Home() {
   const [lobbyName, setLobbyName] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
   const [publicLobbies, setPublicLobbies] = useState<LobbyWithParticipants[]>([]);
   const [loadingLobbies, setLoadingLobbies] = useState(true);
@@ -58,28 +57,12 @@ export function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleJoinLobby = async (e: React.FormEvent) => {
+  const handleJoinLobby = (e: React.FormEvent) => {
     e.preventDefault();
     const code = joinCode.trim().toUpperCase();
-    if (!code) return;
-
-    // If 8 characters, try as invite code first (Twitch lobbies)
-    if (code.length === 8 && user) {
-      setJoining(true);
-      try {
-        const result = await api.joinByInviteCode(code);
-        navigate(`/lobby/${result.lobby.code}`);
-        return;
-      } catch (err) {
-        // If invite code fails, fall through to try as regular lobby code
-        console.log('Invite code failed, trying as lobby code');
-      } finally {
-        setJoining(false);
-      }
+    if (code) {
+      navigate(`/lobby/${code}`);
     }
-
-    // Regular lobby code (6 characters) or fallback
-    navigate(`/lobby/${code}`);
   };
 
   const handleCreateLobby = async (e: React.FormEvent) => {
@@ -165,14 +148,14 @@ export function Home() {
             <h3 className="text-lg font-semibold mb-4">Join a Lobby</h3>
             <form onSubmit={handleJoinLobby} className="flex gap-3">
               <Input
-                placeholder="Enter lobby or invite code"
+                placeholder="Enter lobby code"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                 className="flex-1 font-mono text-center tracking-widest"
-                maxLength={8}
+                maxLength={6}
               />
-              <Button type="submit" disabled={!joinCode.trim() || joining}>
-                {joining ? 'Joining...' : 'Join'}
+              <Button type="submit" disabled={!joinCode.trim()}>
+                Join
               </Button>
             </form>
           </div>

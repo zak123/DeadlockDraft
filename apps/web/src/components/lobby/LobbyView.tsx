@@ -96,9 +96,12 @@ export function LobbyView({
   };
 
   const copyLobbyCode = () => {
-    // For Twitch lobbies, copy the invite code (different from URL code)
-    const codeToCopy = lobby.isTwitchLobby && lobby.inviteCode ? lobby.inviteCode : lobby.code;
-    navigator.clipboard.writeText(codeToCopy);
+    // For Twitch lobbies, copy the full invite link (allows skipping waitlist)
+    // For regular lobbies, copy just the lobby code
+    const textToCopy = lobby.isTwitchLobby && lobby.inviteCode
+      ? `${window.location.origin}/lobby/${lobby.code}?invite=${lobby.inviteCode}`
+      : lobby.code;
+    navigator.clipboard.writeText(textToCopy);
     setShowCopiedToast(true);
     setTimeout(() => setShowCopiedToast(false), 2000);
   };
@@ -112,20 +115,20 @@ export function LobbyView({
             <h1 className="text-2xl font-bold">{lobby.name}</h1>
             <div className="flex items-center gap-3 mt-2 text-deadlock-muted">
               {lobby.isTwitchLobby ? (
-                // Twitch lobbies: single button to copy secret invite code
+                // Twitch lobbies: single button to copy secret invite link
                 <div className="relative">
                   <button
                     onClick={copyLobbyCode}
                     className="flex items-center gap-2 px-4 py-2 bg-amber/20 hover:bg-amber/30 text-amber border border-amber/50 rounded-lg transition-colors text-sm font-medium"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                     </svg>
-                    Copy Secret Invite Code
+                    Copy Secret Invite Link
                   </button>
                   {showCopiedToast && (
                     <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-green-600 text-white text-xs rounded whitespace-nowrap">
-                      Code copied to clipboard
+                      Link copied to clipboard
                     </div>
                   )}
                 </div>
@@ -176,7 +179,7 @@ export function LobbyView({
             </div>
             {lobby.isTwitchLobby && (
               <p className="text-xs text-deadlock-muted mt-1">
-                Invite trusted friends by sharing this code, they will skip the waitlist.
+                Invite trusted friends by sharing this link, they will skip the waitlist.
               </p>
             )}
           </div>

@@ -23,6 +23,8 @@ export function Lobby() {
 
   // Check if user came from "Join Queue" button (should join waitlist, not directly)
   const shouldJoinWaitlist = searchParams.get("waitlist") === "true";
+  // Check for secret invite code (allows skipping waitlist on Twitch lobbies)
+  const inviteCode = searchParams.get("invite");
   const {
     lobby,
     loading,
@@ -150,17 +152,37 @@ export function Lobby() {
     }
   };
 
-  // Auto-join for authenticated Steam users, show modal for guests
-  // Users with the lobby code can join directly (even for Twitch lobbies)
-  // The waitlist is for viewers who find the lobby via the Twitch lobbies panel (?waitlist=true)
+  // Auto-join logic:
+  // - Regular lobbies: auto-join for authenticated users, show modal for guests
+  // - Twitch lobbies: require invite link (?invite=CODE) to auto-join, otherwise show waitlist UI
   useEffect(() => {
     if (!loading && !authLoading && lobby && !isInLobby && !userIsInWaitlist) {
       if (user) {
-        // If came from "Join Queue" button for Twitch lobby, join waitlist instead
-        if (shouldJoinWaitlist && isTwitchLobby) {
+        // Twitch lobby with invite code - join directly via invite
+        if (isTwitchLobby && inviteCode) {
+          api
+            .joinByInviteCode(inviteCode)
+            .then((result) => {
+              setJoinedParticipantId(result.participant.id);
+              localStorage.setItem(
+                `lobby_participant_${code}`,
+                result.participant.id
+              );
+              // Clear the invite param after joining
+              setSearchParams({});
+              return refresh();
+            })
+            .catch((err) => {
+              console.error("Failed to join via invite code:", err);
+              // Invalid invite code - they can use the waitlist instead
+            });
+          return;
+        }
+
+        // Twitch lobby with waitlist param - join waitlist
+        if (isTwitchLobby && shouldJoinWaitlist) {
           joinWaitlist()
             .then(() => {
-              // Clear the query param after joining
               setSearchParams({});
             })
             .catch((err) => {
@@ -169,7 +191,13 @@ export function Lobby() {
           return;
         }
 
-        // Auto-join for authenticated users (including Twitch lobbies if they have the code)
+        // Twitch lobby without invite or waitlist param - don't auto-join
+        // User will see the waitlist UI
+        if (isTwitchLobby) {
+          return;
+        }
+
+        // Regular lobby - auto-join for authenticated users
         api
           .joinLobby(code!)
           .then((result) => {
@@ -182,11 +210,7 @@ export function Lobby() {
           })
           .catch((err) => {
             console.error("Failed to auto-join:", err);
-            // For Twitch lobbies, if join fails (e.g., lobby full), don't show modal
-            // They can use the waitlist instead
-            if (!isTwitchLobby) {
-              setShowJoinModal(true);
-            }
+            setShowJoinModal(true);
           });
       } else if (!isTwitchLobby) {
         // Show join modal for guests (non-Twitch lobbies only)
@@ -202,6 +226,7 @@ export function Lobby() {
     isTwitchLobby,
     user,
     code,
+    inviteCode,
     refresh,
     shouldJoinWaitlist,
     userIsInWaitlist,
