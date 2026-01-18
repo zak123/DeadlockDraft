@@ -14,6 +14,9 @@ function toPublicUser(user: User): PublicUser {
     steamId: user.steamId,
     displayName: user.displayName,
     avatarMedium: user.avatarMedium,
+    twitchUsername: user.twitchUsername,
+    twitchDisplayName: user.twitchDisplayName,
+    twitchAvatar: user.twitchAvatar,
   };
 }
 
@@ -35,6 +38,10 @@ function toLobbyWithParticipants(
     maxPlayers: lobby.maxPlayers,
     isPublic: lobby.isPublic,
     allowTeamChange: lobby.allowTeamChange,
+    isTwitchLobby: lobby.isTwitchLobby,
+    twitchAcceptingPlayers: lobby.twitchAcceptingPlayers,
+    twitchStreamUrl: lobby.twitchStreamUrl,
+    draftCompletedAt: lobby.draftCompletedAt,
     createdAt: lobby.createdAt,
     updatedAt: lobby.updatedAt,
     expiresAt: lobby.expiresAt,
@@ -655,6 +662,169 @@ export class LobbyManager {
     return publicLobbies.map((lobby) =>
       toLobbyWithParticipants(lobby, lobby.participants, lobby.host)
     );
+  }
+
+  async createTwitchLobby(
+    hostUser: User,
+    name: string | undefined,
+    matchConfig?: Partial<MatchConfig>,
+    maxPlayers?: number
+  ): Promise<LobbyWithParticipants> {
+    if (!hostUser.twitchUsername) {
+      throw new Error('Twitch account must be linked to create a Twitch lobby');
+    }
+
+    const code = generateCode();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + this.config.LOBBY_EXPIRY_HOURS);
+
+    const lobbyName = name || `${hostUser.twitchDisplayName || hostUser.displayName}'s Twitch Lobby`;
+    const twitchStreamUrl = `https://twitch.tv/${hostUser.twitchUsername}`;
+
+    const [lobby] = await db
+      .insert(lobbies)
+      .values({
+        id: nanoid(),
+        code,
+        name: lobbyName,
+        hostUserId: hostUser.id,
+        matchConfig: { ...DEFAULT_MATCH_CONFIG, ...matchConfig },
+        maxPlayers: maxPlayers || DEFAULT_MAX_PLAYERS,
+        isPublic: false, // Twitch lobbies start private
+        isTwitchLobby: true,
+        twitchAcceptingPlayers: false, // Host must explicitly start accepting
+        twitchStreamUrl,
+        expiresAt: expiresAt.toISOString(),
+      })
+      .returning();
+
+    // Add host as first participant
+    const [hostParticipant] = await db
+      .insert(lobbyParticipants)
+      .values({
+        id: nanoid(),
+        lobbyId: lobby.id,
+        userId: hostUser.id,
+        team: 'unassigned',
+      })
+      .returning();
+
+    return toLobbyWithParticipants(
+      lobby,
+      [{ ...hostParticipant, user: hostUser }],
+      hostUser
+    );
+  }
+
+  async getTwitchLobbies(page: number = 1, pageSize: number = 5): Promise<{
+    lobbies: (LobbyWithParticipants & { waitlistCount: number })[];
+    totalCount: number;
+  }> {
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+
+    // Get Twitch lobbies that are either:
+    // 1. Accepting players and in waiting status
+    // 2. Draft completed within the last hour
+    const twitchLobbies = await db.query.lobbies.findMany({
+      where: and(
+        eq(lobbies.isTwitchLobby, true),
+        eq(lobbies.twitchAcceptingPlayers, true)
+      ),
+      with: {
+        host: true,
+        participants: {
+          with: { user: true },
+        },
+        waitlist: true,
+      },
+      orderBy: (lobbies, { desc }) => [desc(lobbies.createdAt)],
+    });
+
+    // Filter to include completed lobbies within 1 hour
+    const filteredLobbies = twitchLobbies.filter((lobby) => {
+      if (lobby.status === 'waiting') return true;
+      if (lobby.status === 'completed' && lobby.draftCompletedAt) {
+        const completedAt = new Date(lobby.draftCompletedAt);
+        return completedAt > oneHourAgo;
+      }
+      return false;
+    });
+
+    const totalCount = filteredLobbies.length;
+    const offset = (page - 1) * pageSize;
+    const paginatedLobbies = filteredLobbies.slice(offset, offset + pageSize);
+
+    return {
+      lobbies: paginatedLobbies.map((lobby) => ({
+        ...toLobbyWithParticipants(lobby, lobby.participants, lobby.host),
+        waitlistCount: lobby.waitlist.length,
+      })),
+      totalCount,
+    };
+  }
+
+  async toggleAcceptingPlayers(
+    code: string,
+    hostUserId: string,
+    accepting: boolean
+  ): Promise<LobbyWithParticipants | null> {
+    const lobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.code, code.toUpperCase()),
+      with: {
+        host: true,
+        participants: {
+          with: { user: true },
+        },
+      },
+    });
+
+    if (!lobby) return null;
+
+    if (!lobby.isTwitchLobby) {
+      throw new Error('This is not a Twitch lobby');
+    }
+
+    if (lobby.hostUserId !== hostUserId) {
+      throw new Error('Only the host can toggle accepting players');
+    }
+
+    const [updated] = await db
+      .update(lobbies)
+      .set({
+        twitchAcceptingPlayers: accepting,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(lobbies.id, lobby.id))
+      .returning();
+
+    return toLobbyWithParticipants(updated, lobby.participants, lobby.host);
+  }
+
+  async setDraftCompletedAt(lobbyId: string): Promise<void> {
+    await db
+      .update(lobbies)
+      .set({
+        draftCompletedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(lobbies.id, lobbyId));
+  }
+
+  async getLobbyById(id: string): Promise<LobbyWithParticipants | null> {
+    const lobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.id, id),
+      with: {
+        host: true,
+        participants: {
+          with: { user: true },
+        },
+      },
+    });
+
+    if (!lobby) return null;
+
+    return toLobbyWithParticipants(lobby, lobby.participants, lobby.host);
   }
 }
 

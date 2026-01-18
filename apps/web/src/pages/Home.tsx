@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { SteamLoginButton } from '../components/auth/SteamLoginButton';
+import { TwitchLoginButton } from '../components/auth/TwitchLoginButton';
+import { TwitchLobbiesPanel } from '../components/lobby/TwitchLobbiesPanel';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { Modal } from '../components/common/Modal';
@@ -9,17 +11,21 @@ import { api } from '../services/api';
 import type { LobbyWithParticipants } from '@deadlock-draft/shared';
 
 export function Home() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, refresh } = useAuth();
   const navigate = useNavigate();
   const [joinCode, setJoinCode] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showTwitchCreateModal, setShowTwitchCreateModal] = useState(false);
   const [lobbyName, setLobbyName] = useState('');
+  const [twitchLobbyName, setTwitchLobbyName] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [publicLobbies, setPublicLobbies] = useState<LobbyWithParticipants[]>([]);
   const [loadingLobbies, setLoadingLobbies] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
+
+  const hasTwitchLinked = !!user?.twitchId;
 
   const LOBBIES_PER_PAGE = 5;
   const totalPages = Math.ceil(publicLobbies.length / LOBBIES_PER_PAGE);
@@ -73,6 +79,23 @@ export function Home() {
       navigate(`/lobby/${lobby.code}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create lobby');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleCreateTwitchLobby = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreating(true);
+    setError('');
+
+    try {
+      const lobby = await api.createTwitchLobby({
+        name: twitchLobbyName.trim() || undefined,
+      });
+      navigate(`/lobby/${lobby.code}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create Twitch lobby');
     } finally {
       setCreating(false);
     }
@@ -143,9 +166,26 @@ export function Home() {
           <div className="card p-6">
             <h3 className="text-lg font-semibold mb-4">Create a Lobby</h3>
             {user ? (
-              <Button onClick={() => setShowCreateModal(true)} className="w-full">
-                Create New Lobby
-              </Button>
+              <div className="space-y-3">
+                <Button onClick={() => setShowCreateModal(true)} className="w-full">
+                  Create New Lobby
+                </Button>
+                {hasTwitchLinked ? (
+                  <Button
+                    onClick={() => setShowTwitchCreateModal(true)}
+                    className="w-full bg-[#9146FF] hover:bg-[#7B2FFF]"
+                  >
+                    Create Twitch Lobby
+                  </Button>
+                ) : (
+                  <div className="pt-2 border-t border-deadlock-border">
+                    <p className="text-sm text-deadlock-muted mb-2">
+                      Link your Twitch account to create Twitch lobbies
+                    </p>
+                    <TwitchLoginButton returnTo="/" />
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-deadlock-muted">
@@ -155,6 +195,9 @@ export function Home() {
               </div>
             )}
           </div>
+
+          {/* Twitch Lobbies */}
+          <TwitchLobbiesPanel />
 
           {/* Public Lobbies */}
           <div className="card p-6">
@@ -272,6 +315,51 @@ export function Home() {
             </Button>
             <Button type="submit" disabled={(!isPublic && !lobbyName.trim()) || creating}>
               {creating ? 'Creating...' : 'Create Lobby'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Create Twitch Lobby Modal */}
+      <Modal
+        isOpen={showTwitchCreateModal}
+        onClose={() => setShowTwitchCreateModal(false)}
+        title="Create Twitch Lobby"
+      >
+        <form onSubmit={handleCreateTwitchLobby} className="space-y-4">
+          <div className="p-3 bg-purple-900/30 border border-purple-500/30 rounded-lg">
+            <p className="text-sm text-purple-200">
+              Twitch lobbies let your viewers join a waitlist. You control when to open the queue and who gets promoted to play.
+            </p>
+          </div>
+          <Input
+            label="Lobby Name (optional)"
+            placeholder={`${user?.twitchDisplayName || user?.displayName}'s Twitch Lobby`}
+            value={twitchLobbyName}
+            onChange={(e) => setTwitchLobbyName(e.target.value)}
+            maxLength={100}
+          />
+          <div className="p-3 bg-deadlock-bg rounded-lg">
+            <div className="text-sm text-deadlock-muted">Your Twitch stream will be linked:</div>
+            <div className="font-medium text-purple-400">
+              twitch.tv/{user?.twitchUsername}
+            </div>
+          </div>
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          <div className="flex gap-3 justify-end">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowTwitchCreateModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={creating}
+              className="bg-[#9146FF] hover:bg-[#7B2FFF]"
+            >
+              {creating ? 'Creating...' : 'Create Twitch Lobby'}
             </Button>
           </div>
         </form>

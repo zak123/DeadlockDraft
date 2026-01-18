@@ -18,6 +18,11 @@ export interface User {
   avatarMedium: string | null;
   avatarLarge: string | null;
   profileUrl: string | null;
+  // Twitch fields
+  twitchId: string | null;
+  twitchUsername: string | null;
+  twitchDisplayName: string | null;
+  twitchAvatar: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,6 +32,10 @@ export interface PublicUser {
   steamId: string;
   displayName: string;
   avatarMedium: string | null;
+  // Twitch fields for public display
+  twitchUsername: string | null;
+  twitchDisplayName: string | null;
+  twitchAvatar: string | null;
 }
 
 // Lobby types
@@ -55,6 +64,11 @@ export interface Lobby {
   maxPlayers: number;
   isPublic: boolean;
   allowTeamChange: boolean;
+  // Twitch lobby fields
+  isTwitchLobby: boolean;
+  twitchAcceptingPlayers: boolean;
+  twitchStreamUrl: string | null;
+  draftCompletedAt: string | null;
   createdAt: string;
   updatedAt: string;
   expiresAt: string;
@@ -76,6 +90,20 @@ export interface LobbyParticipant {
 export interface LobbyWithParticipants extends Lobby {
   participants: LobbyParticipant[];
   host: PublicUser;
+}
+
+// Waitlist types
+export interface WaitlistEntry {
+  id: string;
+  lobbyId: string;
+  userId: string;
+  position: number;
+  joinedAt: string;
+  user: PublicUser;
+}
+
+export interface TwitchLobbyWithWaitlist extends LobbyWithParticipants {
+  waitlistCount: number;
 }
 
 // API Request/Response types
@@ -119,6 +147,45 @@ export interface SetCaptainRequest {
   isCaptain: boolean;
 }
 
+// Twitch lobby types
+export interface CreateTwitchLobbyRequest {
+  name?: string;
+  matchConfig?: Partial<MatchConfig>;
+  maxPlayers?: number;
+}
+
+export interface CreateTwitchLobbyResponse {
+  lobby: LobbyWithParticipants;
+}
+
+export interface GetTwitchLobbiesResponse {
+  lobbies: TwitchLobbyWithWaitlist[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ToggleAcceptingPlayersRequest {
+  accepting: boolean;
+}
+
+export interface GetWaitlistResponse {
+  waitlist: WaitlistEntry[];
+  totalCount: number;
+}
+
+export interface PromoteFromWaitlistRequest {
+  userId: string;
+}
+
+export interface FillFromWaitlistRequest {
+  count: number;
+}
+
+export interface FillFromWaitlistResponse {
+  promoted: LobbyParticipant[];
+}
+
 export interface AuthResponse {
   user: User;
 }
@@ -146,7 +213,12 @@ export type WSServerMessage =
   | { type: 'draft:pick'; pick: DraftPick; draftState: DraftState }
   | { type: 'draft:completed'; draftState: DraftState }
   | { type: 'draft:timeout'; autoPick: DraftPick; draftState: DraftState }
-  | { type: 'draft:cancelled' };
+  | { type: 'draft:cancelled' }
+  // Waitlist events
+  | { type: 'waitlist:updated'; waitlist: WaitlistEntry[] }
+  | { type: 'waitlist:joined'; entry: WaitlistEntry }
+  | { type: 'waitlist:left'; userId: string }
+  | { type: 'waitlist:promoted'; userId: string; participant: LobbyParticipant };
 
 // Deadlock API types
 export interface DeadlockCreateMatchResponse {

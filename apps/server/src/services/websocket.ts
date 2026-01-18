@@ -1,5 +1,5 @@
 import type { ServerWebSocket } from 'bun';
-import type { WSClientMessage, WSServerMessage, LobbyWithParticipants } from '@deadlock-draft/shared';
+import type { WSClientMessage, WSServerMessage, LobbyWithParticipants, WaitlistEntry, LobbyParticipant } from '@deadlock-draft/shared';
 import { lobbyManager } from './lobby-manager';
 import { draftManager } from './draft-manager';
 import { db, sessions, lobbyParticipants } from '../db';
@@ -397,6 +397,34 @@ class WebSocketManager {
       message,
       timestamp: new Date().toISOString(),
     });
+  }
+
+  // Waitlist broadcast methods
+  broadcastWaitlistUpdated(lobbyCode: string, waitlist: WaitlistEntry[]) {
+    this.broadcastToLobby(lobbyCode, { type: 'waitlist:updated', waitlist });
+  }
+
+  broadcastWaitlistJoined(lobbyCode: string, entry: WaitlistEntry) {
+    this.broadcastToLobby(lobbyCode, { type: 'waitlist:joined', entry });
+  }
+
+  broadcastWaitlistLeft(lobbyCode: string, userId: string) {
+    this.broadcastToLobby(lobbyCode, { type: 'waitlist:left', userId });
+  }
+
+  broadcastWaitlistPromoted(lobbyCode: string, userId: string, participant: typeof lobbyParticipants.$inferSelect) {
+    const lobbyParticipant: LobbyParticipant = {
+      id: participant.id,
+      lobbyId: participant.lobbyId,
+      userId: participant.userId,
+      anonymousName: participant.anonymousName,
+      sessionToken: null,
+      team: participant.team as 'amber' | 'sapphire' | 'spectator' | 'unassigned',
+      isReady: participant.isReady,
+      isCaptain: participant.isCaptain,
+      joinedAt: participant.joinedAt,
+    };
+    this.broadcastToLobby(lobbyCode, { type: 'waitlist:promoted', userId, participant: lobbyParticipant });
   }
 }
 

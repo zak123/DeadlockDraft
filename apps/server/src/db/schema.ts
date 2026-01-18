@@ -11,10 +11,19 @@ export const users = sqliteTable('users', {
   avatarMedium: text('avatar_medium'),
   avatarLarge: text('avatar_large'),
   profileUrl: text('profile_url'),
+  // Twitch fields
+  twitchId: text('twitch_id').unique(),
+  twitchUsername: text('twitch_username'),
+  twitchDisplayName: text('twitch_display_name'),
+  twitchAvatar: text('twitch_avatar'),
+  twitchAccessToken: text('twitch_access_token'),
+  twitchRefreshToken: text('twitch_refresh_token'),
+  twitchTokenExpiresAt: text('twitch_token_expires_at'),
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString()),
 }, (table) => ({
   steamIdIdx: index('users_steam_id_idx').on(table.steamId),
+  twitchIdIdx: index('users_twitch_id_idx').on(table.twitchId),
 }));
 
 // Sessions table
@@ -48,6 +57,11 @@ export const lobbies = sqliteTable('lobbies', {
   maxPlayers: integer('max_players').notNull().default(12),
   isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
   allowTeamChange: integer('allow_team_change', { mode: 'boolean' }).notNull().default(false),
+  // Twitch lobby fields
+  isTwitchLobby: integer('is_twitch_lobby', { mode: 'boolean' }).notNull().default(false),
+  twitchAcceptingPlayers: integer('twitch_accepting_players', { mode: 'boolean' }).notNull().default(false),
+  twitchStreamUrl: text('twitch_stream_url'),
+  draftCompletedAt: text('draft_completed_at'),
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString()),
   expiresAt: text('expires_at').notNull(),
@@ -55,6 +69,7 @@ export const lobbies = sqliteTable('lobbies', {
   codeIdx: index('lobbies_code_idx').on(table.code),
   statusIdx: index('lobbies_status_idx').on(table.status),
   hostUserIdIdx: index('lobbies_host_user_id_idx').on(table.hostUserId),
+  twitchLobbyIdx: index('lobbies_twitch_lobby_idx').on(table.isTwitchLobby),
 }));
 
 // Lobby participants table
@@ -72,6 +87,18 @@ export const lobbyParticipants = sqliteTable('lobby_participants', {
   lobbyIdIdx: index('lobby_participants_lobby_id_idx').on(table.lobbyId),
   userIdIdx: index('lobby_participants_user_id_idx').on(table.userId),
   sessionTokenIdx: index('lobby_participants_session_token_idx').on(table.sessionToken),
+}));
+
+// Lobby waitlist table (for Twitch lobbies)
+export const lobbyWaitlist = sqliteTable('lobby_waitlist', {
+  id: text('id').primaryKey(),
+  lobbyId: text('lobby_id').notNull().references(() => lobbies.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  position: integer('position').notNull(),
+  joinedAt: text('joined_at').notNull().$defaultFn(() => new Date().toISOString()),
+}, (table) => ({
+  lobbyIdIdx: index('lobby_waitlist_lobby_id_idx').on(table.lobbyId),
+  uniqueEntry: index('lobby_waitlist_unique').on(table.lobbyId, table.userId),
 }));
 
 // Draft config table
@@ -125,6 +152,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   hostedLobbies: many(lobbies),
   participations: many(lobbyParticipants),
+  waitlistEntries: many(lobbyWaitlist),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -140,6 +168,7 @@ export const lobbiesRelations = relations(lobbies, ({ one, many }) => ({
     references: [users.id],
   }),
   participants: many(lobbyParticipants),
+  waitlist: many(lobbyWaitlist),
   draftConfig: one(draftConfigs),
   draftSession: one(draftSessions),
 }));
@@ -154,6 +183,17 @@ export const lobbyParticipantsRelations = relations(lobbyParticipants, ({ one, m
     references: [users.id],
   }),
   draftPicks: many(draftPicks),
+}));
+
+export const lobbyWaitlistRelations = relations(lobbyWaitlist, ({ one }) => ({
+  lobby: one(lobbies, {
+    fields: [lobbyWaitlist.lobbyId],
+    references: [lobbies.id],
+  }),
+  user: one(users, {
+    fields: [lobbyWaitlist.userId],
+    references: [users.id],
+  }),
 }));
 
 export const draftConfigsRelations = relations(draftConfigs, ({ one }) => ({
@@ -191,6 +231,8 @@ export type Lobby = typeof lobbies.$inferSelect;
 export type NewLobby = typeof lobbies.$inferInsert;
 export type LobbyParticipant = typeof lobbyParticipants.$inferSelect;
 export type NewLobbyParticipant = typeof lobbyParticipants.$inferInsert;
+export type LobbyWaitlistEntry = typeof lobbyWaitlist.$inferSelect;
+export type NewLobbyWaitlistEntry = typeof lobbyWaitlist.$inferInsert;
 export type DraftConfig = typeof draftConfigs.$inferSelect;
 export type NewDraftConfig = typeof draftConfigs.$inferInsert;
 export type DraftSession = typeof draftSessions.$inferSelect;

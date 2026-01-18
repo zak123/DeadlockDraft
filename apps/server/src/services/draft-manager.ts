@@ -517,7 +517,11 @@ export class DraftManager {
 
         await db
           .update(lobbies)
-          .set({ status: 'completed', updatedAt: new Date().toISOString() })
+          .set({
+            status: 'completed',
+            draftCompletedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
           .where(eq(lobbies.id, lobbyId));
 
         const draftState = await this.getDraftState(lobbyId);

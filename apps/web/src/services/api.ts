@@ -3,6 +3,14 @@ import type {
   LobbyWithParticipants,
   CreateLobbyRequest,
   CreateLobbyResponse,
+  CreateTwitchLobbyRequest,
+  CreateTwitchLobbyResponse,
+  GetTwitchLobbiesResponse,
+  TwitchLobbyWithWaitlist,
+  WaitlistEntry,
+  GetWaitlistResponse,
+  FillFromWaitlistResponse,
+  LobbyParticipant,
   JoinLobbyRequest,
   JoinLobbyResponse,
   UpdateLobbyRequest,
@@ -220,6 +228,86 @@ class ApiClient {
 
   async cancelDraft(code: string): Promise<void> {
     await this.request(`/lobbies/${code}/draft`, { method: 'DELETE' });
+  }
+
+  // Twitch Auth
+  getTwitchLoginUrl(returnTo?: string): string {
+    const params = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
+    return `${API_BASE}/auth/twitch${params}`;
+  }
+
+  async unlinkTwitch(): Promise<User> {
+    const result = await this.request<{ user: User }>('/auth/twitch/unlink', {
+      method: 'POST',
+    });
+    return result.user;
+  }
+
+  // Twitch Lobbies
+  async getTwitchLobbies(page: number = 1, pageSize: number = 5): Promise<{
+    lobbies: TwitchLobbyWithWaitlist[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+  }> {
+    return this.request<GetTwitchLobbiesResponse>(`/lobbies/twitch?page=${page}&pageSize=${pageSize}`);
+  }
+
+  async createTwitchLobby(data: CreateTwitchLobbyRequest): Promise<LobbyWithParticipants> {
+    const result = await this.request<CreateTwitchLobbyResponse>('/lobbies/twitch', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return result.lobby;
+  }
+
+  async toggleAcceptingPlayers(code: string, accepting: boolean): Promise<LobbyWithParticipants> {
+    const result = await this.request<{ lobby: LobbyWithParticipants }>(
+      `/lobbies/${code}/twitch/accepting`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ accepting }),
+      }
+    );
+    return result.lobby;
+  }
+
+  // Waitlist
+  async getWaitlist(code: string): Promise<{ waitlist: WaitlistEntry[]; totalCount: number }> {
+    return this.request<GetWaitlistResponse>(`/lobbies/${code}/waitlist`);
+  }
+
+  async joinWaitlist(code: string): Promise<WaitlistEntry> {
+    const result = await this.request<{ entry: WaitlistEntry }>(`/lobbies/${code}/waitlist/join`, {
+      method: 'POST',
+    });
+    return result.entry;
+  }
+
+  async leaveWaitlist(code: string): Promise<void> {
+    await this.request(`/lobbies/${code}/waitlist/leave`, { method: 'POST' });
+  }
+
+  async promoteFromWaitlist(code: string, userId: string): Promise<LobbyParticipant> {
+    const result = await this.request<{ participant: LobbyParticipant }>(
+      `/lobbies/${code}/waitlist/promote`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ userId }),
+      }
+    );
+    return result.participant;
+  }
+
+  async fillFromWaitlist(code: string, count: number): Promise<LobbyParticipant[]> {
+    const result = await this.request<FillFromWaitlistResponse>(
+      `/lobbies/${code}/waitlist/fill-random`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ count }),
+      }
+    );
+    return result.promoted;
   }
 }
 
