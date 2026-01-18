@@ -161,8 +161,10 @@ function TwitchLobbyCard({ lobby, onJoinQueue }: TwitchLobbyCardProps) {
                 {lobby.waitlistCount} in queue
               </span>
             )}
-            {isCompleted ? (
-              <span className="text-yellow-400">Draft Completed</span>
+            {isCompleted && lobby.draftCompletedAt ? (
+              <span className="text-yellow-400">Draft completed {formatTimeAgo(lobby.draftCompletedAt)}</span>
+            ) : isCompleted ? (
+              <span className="text-yellow-400">Draft completed</span>
             ) : (
               <span>{formatTimeAgo(lobby.createdAt)}</span>
             )}
