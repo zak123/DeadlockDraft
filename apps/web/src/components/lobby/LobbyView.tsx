@@ -56,6 +56,17 @@ export function LobbyView({
     };
   }, [lobby.participants]);
 
+  const readyStatus = useMemo(() => {
+    // Only count players on teams (amber/sapphire), not spectators or unassigned
+    const teamPlayers = lobby.participants.filter(
+      (p) => p.team === 'amber' || p.team === 'sapphire'
+    );
+    const readyCount = teamPlayers.filter((p) => p.isReady).length;
+    const totalCount = teamPlayers.length;
+    const allReady = totalCount > 0 && readyCount === totalCount;
+    return { readyCount, totalCount, allReady };
+  }, [lobby.participants]);
+
   const handleStartDraft = async () => {
     setStartingDraft(true);
     setDraftError(null);
@@ -225,8 +236,9 @@ export function LobbyView({
                 </Button>
                 <button
                   onClick={handleStartDraft}
-                  disabled={startingDraft}
-                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50"
+                  disabled={startingDraft || !readyStatus.allReady}
+                  title={!readyStatus.allReady ? `${readyStatus.readyCount}/${readyStatus.totalCount} players ready` : undefined}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {startingDraft ? 'Starting...' : 'Start Draft'}
                 </button>
