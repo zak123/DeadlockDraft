@@ -219,7 +219,7 @@ function TwitchLobbyCard({ lobby, onJoinQueue }: TwitchLobbyCardProps) {
             onClick={onJoinQueue}
             className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors text-sm font-medium"
           >
-            Join Queue
+            Join
           </button>
         )}
       </div>
