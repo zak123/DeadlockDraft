@@ -170,16 +170,15 @@ function TwitchLobbyCard({ lobby, onJoinQueue }: TwitchLobbyCardProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {lobby.twitchStreamUrl && (
           <a
             href={lobby.twitchStreamUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-purple-400 hover:text-purple-300 transition-colors text-sm"
+            className="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-sm font-medium"
           >
-            <TwitchIcon small />
-            Watch Stream
+            Watch
           </a>
         )}
         {!isCompleted && (
