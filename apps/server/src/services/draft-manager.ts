@@ -748,10 +748,10 @@ export class DraftManager {
         partyCode: joinCode,
       });
 
-      // Also send a system message
+      // Also send a system message (don't include code - it's shown in the UI)
       wsManager.broadcastSystemMessage(
         lobbyCode,
-        `Party created! Enter code ${joinCode} in Deadlock to join.`
+        `Party created! Click to reveal the code above, then enter it in Deadlock.`
       );
     } catch (error) {
       console.error('Failed to create Deadlock party:', error);

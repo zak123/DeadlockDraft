@@ -244,7 +244,7 @@ export function DraftView({
                   title={showPartyCode ? 'Hide code' : 'Show code'}
                 >
                   <span className="font-mono text-3xl font-bold text-green-400 tracking-wider">
-                    {showPartyCode ? partyCode : '••••-••••'}
+                    {showPartyCode ? partyCode : '•••••'}
                   </span>
                   {showPartyCode ? (
                     <svg className="w-5 h-5 text-deadlock-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">

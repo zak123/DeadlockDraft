@@ -250,28 +250,35 @@ class WebSocketManager {
       try {
         // Check if there's an active draft and if the disconnecting user is a captain
         const lobby = await lobbyManager.getLobbyByCode(lobbyCode);
-        if (lobby) {
-          const draftSession = await draftManager.getDraftSession(lobby.id);
+        if (!lobby) return;
 
-          if (draftSession && draftSession.status === 'active') {
-            // Find the disconnecting participant
-            const participant = lobby.participants.find(p =>
-              (userId && p.userId === userId) ||
-              (sessionToken && p.sessionToken === sessionToken)
+        const draftSession = await draftManager.getDraftSession(lobby.id);
+
+        // Don't remove users from completed lobbies - they may just be refreshing
+        // and need to see the party code when they come back
+        if (lobby.status === 'completed' || (draftSession && draftSession.status === 'completed')) {
+          console.log('User disconnected from completed lobby, keeping in database:', userId || sessionToken);
+          return;
+        }
+
+        if (draftSession && draftSession.status === 'active') {
+          // Find the disconnecting participant
+          const participant = lobby.participants.find(p =>
+            (userId && p.userId === userId) ||
+            (sessionToken && p.sessionToken === sessionToken)
+          );
+
+          // Check if they're a captain on an actual team (not spectator/unassigned)
+          if (participant && participant.isCaptain && (participant.team === 'amber' || participant.team === 'sapphire')) {
+            const teamName = participant.team === 'amber' ? 'Amber' : 'Sapphire';
+            const playerName = participant.user?.displayName || participant.anonymousName || 'A captain';
+
+            // Cancel the draft due to captain disconnect
+            await draftManager.cancelDraftForDisconnect(
+              lobbyCode,
+              lobby.id,
+              `Draft cancelled: ${playerName} (${teamName} captain) disconnected`
             );
-
-            // Check if they're a captain on an actual team (not spectator/unassigned)
-            if (participant && participant.isCaptain && (participant.team === 'amber' || participant.team === 'sapphire')) {
-              const teamName = participant.team === 'amber' ? 'Amber' : 'Sapphire';
-              const playerName = participant.user?.displayName || participant.anonymousName || 'A captain';
-
-              // Cancel the draft due to captain disconnect
-              await draftManager.cancelDraftForDisconnect(
-                lobbyCode,
-                lobby.id,
-                `Draft cancelled: ${playerName} (${teamName} captain) disconnected`
-              );
-            }
           }
         }
 
@@ -303,35 +310,46 @@ class WebSocketManager {
       const connection = this.connectedParticipants.get(key);
       if (!connection) continue;
 
-      console.log(`Cleaning up stale participant: ${key} from lobby ${connection.lobbyCode}`);
-
-      this.connectedParticipants.delete(key);
-
       try {
-        // Check if there's an active draft and if the stale user is a captain
+        // Check lobby and draft status
         const lobby = await lobbyManager.getLobbyByCode(connection.lobbyCode);
-        if (lobby) {
-          const draftSession = await draftManager.getDraftSession(lobby.id);
+        if (!lobby) {
+          // Lobby doesn't exist, just clean up the tracking
+          this.connectedParticipants.delete(key);
+          continue;
+        }
 
-          if (draftSession && draftSession.status === 'active') {
-            // Find the stale participant
-            const participant = lobby.participants.find(p =>
-              (connection.visitorUserId && p.userId === connection.visitorUserId) ||
-              (connection.sessionToken && p.sessionToken === connection.sessionToken)
+        const draftSession = await draftManager.getDraftSession(lobby.id);
+
+        // Don't kick users from completed lobbies - they need to see the party code
+        if (lobby.status === 'completed' || (draftSession && draftSession.status === 'completed')) {
+          // Just update last seen to prevent repeated checks, but don't remove them
+          connection.lastSeen = now;
+          continue;
+        }
+
+        console.log(`Cleaning up stale participant: ${key} from lobby ${connection.lobbyCode}`);
+
+        this.connectedParticipants.delete(key);
+
+        if (draftSession && draftSession.status === 'active') {
+          // Find the stale participant
+          const participant = lobby.participants.find(p =>
+            (connection.visitorUserId && p.userId === connection.visitorUserId) ||
+            (connection.sessionToken && p.sessionToken === connection.sessionToken)
+          );
+
+          // Check if they're a captain on an actual team
+          if (participant && participant.isCaptain && (participant.team === 'amber' || participant.team === 'sapphire')) {
+            const teamName = participant.team === 'amber' ? 'Amber' : 'Sapphire';
+            const playerName = participant.user?.displayName || participant.anonymousName || 'A captain';
+
+            // Cancel the draft due to captain disconnect
+            await draftManager.cancelDraftForDisconnect(
+              connection.lobbyCode,
+              lobby.id,
+              `Draft cancelled: ${playerName} (${teamName} captain) disconnected`
             );
-
-            // Check if they're a captain on an actual team
-            if (participant && participant.isCaptain && (participant.team === 'amber' || participant.team === 'sapphire')) {
-              const teamName = participant.team === 'amber' ? 'Amber' : 'Sapphire';
-              const playerName = participant.user?.displayName || participant.anonymousName || 'A captain';
-
-              // Cancel the draft due to captain disconnect
-              await draftManager.cancelDraftForDisconnect(
-                connection.lobbyCode,
-                lobby.id,
-                `Draft cancelled: ${playerName} (${teamName} captain) disconnected`
-              );
-            }
           }
         }
 
