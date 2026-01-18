@@ -65,8 +65,8 @@ export function TwitchLobbiesPanel() {
       return;
     }
 
-    // For sub-only lobbies, user must have Twitch linked
-    if (lobby.twitchSubsOnly && !user.twitchId) {
+    // For restricted lobbies (followers/subscribers), user must have Twitch linked
+    if (lobby.twitchRestriction !== 'none' && !user.twitchId) {
       // Show warning modal instead of immediately redirecting
       setPendingLobby(lobby);
       setShowTwitchWarning(true);
@@ -215,8 +215,12 @@ export function TwitchLobbiesPanel() {
               <h3 className="text-xl font-bold text-white">Twitch Account Required</h3>
             </div>
             <p className="text-gray-300 mb-4">
-              This is a <span className="text-purple-400 font-medium">subscribers-only</span> lobby.
-              You need to link your Twitch account so we can verify your subscription to{' '}
+              This is a{' '}
+              <span className="text-purple-400 font-medium">
+                {pendingLobby.twitchRestriction === 'followers' ? 'followers-only' : 'subscribers-only'}
+              </span>{' '}
+              lobby. You need to link your Twitch account so we can verify you{' '}
+              {pendingLobby.twitchRestriction === 'followers' ? 'follow' : 'are subscribed to'}{' '}
               <span className="text-white font-medium">
                 {pendingLobby.host.twitchDisplayName || pendingLobby.host.displayName}
               </span>.
@@ -268,9 +272,20 @@ function TwitchLobbyCard({ lobby, onJoinQueue }: TwitchLobbyCardProps) {
         <div>
           <div className="text-white font-medium flex items-center gap-2">
             {lobby.host.twitchDisplayName || lobby.host.displayName}'s Lobby
-            {lobby.twitchSubsOnly && (
-              <span className="px-1.5 py-0.5 bg-purple-600 text-white text-xs rounded font-medium">
-                Sub Only
+            {lobby.twitchRestriction === 'followers' && (
+              <span className="px-1.5 py-0.5 bg-purple-600/70 text-white text-xs rounded font-medium flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                Followers
+              </span>
+            )}
+            {lobby.twitchRestriction === 'subscribers' && (
+              <span className="px-1.5 py-0.5 bg-purple-600 text-white text-xs rounded font-medium flex items-center gap-1">
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                Subs
               </span>
             )}
             {lobby.viewerCount > 0 && (

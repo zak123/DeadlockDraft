@@ -9,7 +9,7 @@ import { Input } from '../components/common/Input';
 import { Modal } from '../components/common/Modal';
 import { api } from '../services/api';
 import { formatTimeAgo } from '../utils/time';
-import type { LobbyWithParticipants } from '@deadlock-draft/shared';
+import type { LobbyWithParticipants, TwitchRestriction } from '@deadlock-draft/shared';
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   twitch_already_linked: 'This Twitch account is already linked to another Steam account.',
@@ -29,7 +29,7 @@ export function Home() {
   const [showTwitchCreateModal, setShowTwitchCreateModal] = useState(false);
   const [lobbyName, setLobbyName] = useState('');
   const [isPublic, setIsPublic] = useState(false);
-  const [subscribersOnly, setSubscribersOnly] = useState(false);
+  const [restriction, setRestriction] = useState<TwitchRestriction>('none');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
@@ -117,7 +117,7 @@ export function Home() {
     setError('');
 
     try {
-      const lobby = await api.createTwitchLobby({ subscribersOnly });
+      const lobby = await api.createTwitchLobby({ restriction });
       navigate(`/lobby/${lobby.code}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create Twitch lobby');
@@ -418,7 +418,7 @@ export function Home() {
         isOpen={showTwitchCreateModal}
         onClose={() => {
           setShowTwitchCreateModal(false);
-          setSubscribersOnly(false);
+          setRestriction('none');
         }}
         title="Create Twitch Lobby"
       >
@@ -438,31 +438,87 @@ export function Home() {
               twitch.tv/{user?.twitchUsername}
             </div>
           </div>
-          <div className="flex items-center justify-between p-3 bg-deadlock-bg rounded-lg">
-            <div>
-              <div className="font-medium flex items-center gap-2">
-                Subscribers Only
-                <svg className="w-4 h-4 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-              </div>
-              <div className="text-sm text-deadlock-muted">
-                Only your Twitch subscribers can join the queue
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSubscribersOnly(!subscribersOnly)}
-              className={`w-14 h-8 rounded-full transition-colors ${
-                subscribersOnly ? 'bg-purple-600' : 'bg-deadlock-border'
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-deadlock-muted">Who can join the queue?</div>
+            <label
+              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                restriction === 'none' ? 'bg-purple-900/30 border border-purple-500/50' : 'bg-deadlock-bg hover:bg-deadlock-border'
               }`}
             >
-              <div
-                className={`w-6 h-6 bg-white rounded-full transition-transform ${
-                  subscribersOnly ? 'translate-x-7' : 'translate-x-1'
-                }`}
+              <input
+                type="radio"
+                name="restriction"
+                value="none"
+                checked={restriction === 'none'}
+                onChange={() => setRestriction('none')}
+                className="sr-only"
               />
-            </button>
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                restriction === 'none' ? 'border-purple-500' : 'border-deadlock-muted'
+              }`}>
+                {restriction === 'none' && <div className="w-2 h-2 rounded-full bg-purple-500" />}
+              </div>
+              <div>
+                <div className="font-medium">Anyone</div>
+                <div className="text-sm text-deadlock-muted">All viewers can join the queue</div>
+              </div>
+            </label>
+            <label
+              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                restriction === 'followers' ? 'bg-purple-900/30 border border-purple-500/50' : 'bg-deadlock-bg hover:bg-deadlock-border'
+              }`}
+            >
+              <input
+                type="radio"
+                name="restriction"
+                value="followers"
+                checked={restriction === 'followers'}
+                onChange={() => setRestriction('followers')}
+                className="sr-only"
+              />
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                restriction === 'followers' ? 'border-purple-500' : 'border-deadlock-muted'
+              }`}>
+                {restriction === 'followers' && <div className="w-2 h-2 rounded-full bg-purple-500" />}
+              </div>
+              <div>
+                <div className="font-medium flex items-center gap-2">
+                  Followers Only
+                  <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </div>
+                <div className="text-sm text-deadlock-muted">Only followers can join the queue</div>
+              </div>
+            </label>
+            <label
+              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                restriction === 'subscribers' ? 'bg-purple-900/30 border border-purple-500/50' : 'bg-deadlock-bg hover:bg-deadlock-border'
+              }`}
+            >
+              <input
+                type="radio"
+                name="restriction"
+                value="subscribers"
+                checked={restriction === 'subscribers'}
+                onChange={() => setRestriction('subscribers')}
+                className="sr-only"
+              />
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                restriction === 'subscribers' ? 'border-purple-500' : 'border-deadlock-muted'
+              }`}>
+                {restriction === 'subscribers' && <div className="w-2 h-2 rounded-full bg-purple-500" />}
+              </div>
+              <div>
+                <div className="font-medium flex items-center gap-2">
+                  Subscribers Only
+                  <svg className="w-4 h-4 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                </div>
+                <div className="text-sm text-deadlock-muted">Only subscribers can join the queue</div>
+              </div>
+            </label>
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <div className="flex gap-3 justify-end">
@@ -471,7 +527,7 @@ export function Home() {
               variant="secondary"
               onClick={() => {
                 setShowTwitchCreateModal(false);
-                setSubscribersOnly(false);
+                setRestriction('none');
               }}
             >
               Cancel

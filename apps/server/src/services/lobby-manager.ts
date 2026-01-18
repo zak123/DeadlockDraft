@@ -3,7 +3,7 @@ import { eq, and, lt, sql } from 'drizzle-orm';
 import { nanoid, customAlphabet } from 'nanoid';
 import { getConfig } from '../config/env';
 import { DEFAULT_MATCH_CONFIG, LOBBY_CODE_LENGTH, DEFAULT_MAX_PLAYERS, MAX_SPECTATORS } from '../config/match-defaults';
-import type { LobbyWithParticipants, MatchConfig, Team, PublicUser, TwitchLobbyWithWaitlist } from '@deadlock-draft/shared';
+import type { LobbyWithParticipants, MatchConfig, Team, PublicUser, TwitchLobbyWithWaitlist, TwitchRestriction } from '@deadlock-draft/shared';
 import type { Lobby, LobbyParticipant, User } from '../db/schema';
 import { twitchAuthService } from './twitch-auth';
 
@@ -44,7 +44,7 @@ function toLobbyWithParticipants(
     isTwitchLobby: lobby.isTwitchLobby,
     twitchAcceptingPlayers: lobby.twitchAcceptingPlayers,
     twitchStreamUrl: lobby.twitchStreamUrl,
-    twitchSubsOnly: lobby.twitchSubsOnly,
+    twitchRestriction: (lobby.twitchRestriction || 'none') as TwitchRestriction,
     inviteCode: lobby.inviteCode,
     draftCompletedAt: lobby.draftCompletedAt,
     createdAt: lobby.createdAt,
@@ -823,7 +823,7 @@ export class LobbyManager {
     hostUser: User,
     matchConfig?: Partial<MatchConfig>,
     maxPlayers?: number,
-    subscribersOnly?: boolean
+    restriction?: TwitchRestriction
   ): Promise<LobbyWithParticipants> {
     if (!hostUser.twitchUsername) {
       throw new Error('Twitch account must be linked to create a Twitch lobby');
@@ -851,7 +851,7 @@ export class LobbyManager {
         isTwitchLobby: true,
         twitchAcceptingPlayers: false, // Host must explicitly start accepting
         twitchStreamUrl,
-        twitchSubsOnly: subscribersOnly || false,
+        twitchRestriction: restriction || 'none',
         inviteCode, // Separate from URL code to prevent waitlist bypass
         expiresAt: expiresAt.toISOString(),
       })

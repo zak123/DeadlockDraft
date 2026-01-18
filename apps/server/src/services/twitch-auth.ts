@@ -250,6 +250,53 @@ export class TwitchAuthService {
   }
 
   /**
+   * Check if a user is following a broadcaster's channel.
+   * Uses app access token to check the follow relationship.
+   * Returns true if following, false otherwise.
+   */
+  async isUserFollowing(
+    viewerTwitchId: string,
+    broadcasterTwitchId: string
+  ): Promise<boolean> {
+    if (!this.isConfigured()) {
+      throw new Error('Twitch OAuth is not configured');
+    }
+
+    try {
+      // Get app access token
+      const tokenResponse = await this.getAppAccessToken();
+      if (!tokenResponse) {
+        console.error('Failed to get Twitch app access token for follower check');
+        return false;
+      }
+
+      const params = new URLSearchParams({
+        broadcaster_id: broadcasterTwitchId,
+        user_id: viewerTwitchId,
+      });
+
+      const response = await fetch(`${TWITCH_API_URL}/channels/followers?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${tokenResponse.access_token}`,
+          'Client-Id': this.config.TWITCH_CLIENT_ID,
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Failed to check Twitch follow status:', await response.text());
+        return false;
+      }
+
+      const data = await response.json();
+      // If we get data back with entries, the user is following
+      return data.data && data.data.length > 0;
+    } catch (error) {
+      console.error('Error checking Twitch follow status:', error);
+      return false;
+    }
+  }
+
+  /**
    * Check if a user is subscribed to a broadcaster's channel.
    * Requires the viewer's access token with user:read:subscriptions scope.
    * Returns true if subscribed, false otherwise.

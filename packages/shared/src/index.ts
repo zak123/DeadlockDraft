@@ -42,6 +42,7 @@ export interface PublicUser {
 // Lobby types
 export type LobbyStatus = 'waiting' | 'starting' | 'in_progress' | 'completed' | 'cancelled';
 export type Team = 'amber' | 'sapphire' | 'spectator' | 'unassigned';
+export type TwitchRestriction = 'none' | 'followers' | 'subscribers';
 
 export interface MatchConfig {
   gameMode: string;
@@ -69,7 +70,7 @@ export interface Lobby {
   isTwitchLobby: boolean;
   twitchAcceptingPlayers: boolean;
   twitchStreamUrl: string | null;
-  twitchSubsOnly: boolean;
+  twitchRestriction: TwitchRestriction;
   inviteCode: string | null; // Separate from URL code for Twitch lobbies
   draftCompletedAt: string | null;
   createdAt: string;
@@ -159,7 +160,7 @@ export interface SetCaptainRequest {
 export interface CreateTwitchLobbyRequest {
   matchConfig?: Partial<MatchConfig>;
   maxPlayers?: number;
-  subscribersOnly?: boolean;
+  restriction?: TwitchRestriction;
 }
 
 export interface CreateTwitchLobbyResponse {

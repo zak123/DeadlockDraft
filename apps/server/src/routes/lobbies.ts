@@ -120,7 +120,7 @@ lobbies.post('/twitch', requireAuth, async (c) => {
       })
       .optional(),
     maxPlayers: z.number().min(2).max(24).optional(),
-    subscribersOnly: z.boolean().optional(),
+    restriction: z.enum(['none', 'followers', 'subscribers']).optional(),
   });
 
   const validated = createTwitchLobbySchema.parse(body);
@@ -130,7 +130,7 @@ lobbies.post('/twitch', requireAuth, async (c) => {
       user,
       validated.matchConfig,
       validated.maxPlayers,
-      validated.subscribersOnly
+      validated.restriction
     );
 
     return c.json<CreateTwitchLobbyResponse>({ lobby }, 201);
@@ -543,40 +543,64 @@ lobbies.post('/:code/waitlist/join', requireAuth, async (c) => {
     throw new HTTPException(400, { message: 'Not a Twitch lobby' });
   }
 
-  // Check subscribers-only restriction
-  if (lobby.twitchSubsOnly) {
+  // Check restriction (followers or subscribers)
+  if (lobby.twitchRestriction !== 'none') {
     // User must have Twitch linked
-    if (!user.twitchId || !user.twitchAccessToken) {
+    if (!user.twitchId) {
+      const restrictionText = lobby.twitchRestriction === 'subscribers' ? 'subscribers-only' : 'followers-only';
       throw new HTTPException(403, {
-        message: 'This lobby is subscribers-only. Please link your Twitch account first.',
+        message: `This lobby is ${restrictionText}. Please link your Twitch account first.`,
       });
     }
 
-    // Get host to check subscription
+    // Get host to check relationship
     if (!lobby.host.twitchId) {
       throw new HTTPException(500, { message: 'Host Twitch account not found' });
     }
 
-    // Get valid access token (refresh if needed)
     const { twitchAuthService } = await import('../services/twitch-auth');
-    const accessToken = await twitchAuthService.getValidAccessToken(user);
-    if (!accessToken) {
-      throw new HTTPException(403, {
-        message: 'Could not verify Twitch subscription. Please re-link your Twitch account.',
-      });
-    }
+    const hostName = lobby.host.twitchDisplayName || lobby.host.twitchUsername;
 
-    // Check if user is subscribed to host
-    const isSubscribed = await twitchAuthService.isUserSubscribed(
-      accessToken,
-      user.twitchId,
-      lobby.host.twitchId
-    );
+    if (lobby.twitchRestriction === 'followers') {
+      // Check if user follows the host
+      const isFollowing = await twitchAuthService.isUserFollowing(
+        user.twitchId,
+        lobby.host.twitchId
+      );
 
-    if (!isSubscribed) {
-      throw new HTTPException(403, {
-        message: `This lobby is subscribers-only. You must be subscribed to ${lobby.host.twitchDisplayName || lobby.host.twitchUsername} to join.`,
-      });
+      if (!isFollowing) {
+        throw new HTTPException(403, {
+          message: `This lobby is followers-only. You must follow ${hostName} to join.`,
+        });
+      }
+    } else if (lobby.twitchRestriction === 'subscribers') {
+      // User must have access token for subscription check
+      if (!user.twitchAccessToken) {
+        throw new HTTPException(403, {
+          message: 'This lobby is subscribers-only. Please link your Twitch account first.',
+        });
+      }
+
+      // Get valid access token (refresh if needed)
+      const accessToken = await twitchAuthService.getValidAccessToken(user);
+      if (!accessToken) {
+        throw new HTTPException(403, {
+          message: 'Could not verify Twitch subscription. Please re-link your Twitch account.',
+        });
+      }
+
+      // Check if user is subscribed to host
+      const isSubscribed = await twitchAuthService.isUserSubscribed(
+        accessToken,
+        user.twitchId,
+        lobby.host.twitchId
+      );
+
+      if (!isSubscribed) {
+        throw new HTTPException(403, {
+          message: `This lobby is subscribers-only. You must be subscribed to ${hostName} to join.`,
+        });
+      }
     }
   }
 
