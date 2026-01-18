@@ -7,6 +7,7 @@ import type { LobbyWithParticipants, MatchConfig, Team, PublicUser } from '@dead
 import type { Lobby, LobbyParticipant, User } from '../db/schema';
 
 const generateCode = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', LOBBY_CODE_LENGTH);
+const generateInviteCode = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 8); // Longer for Twitch invite codes
 
 function toPublicUser(user: User): PublicUser {
   return {
@@ -41,6 +42,7 @@ function toLobbyWithParticipants(
     isTwitchLobby: lobby.isTwitchLobby,
     twitchAcceptingPlayers: lobby.twitchAcceptingPlayers,
     twitchStreamUrl: lobby.twitchStreamUrl,
+    inviteCode: lobby.inviteCode,
     draftCompletedAt: lobby.draftCompletedAt,
     createdAt: lobby.createdAt,
     updatedAt: lobby.updatedAt,
@@ -189,6 +191,67 @@ export class LobbyManager {
       lobby: toLobbyWithParticipants(lobby, updatedParticipants, lobby.host),
       participant,
       sessionToken,
+    };
+  }
+
+  // Join a Twitch lobby directly via invite code (bypasses waitlist)
+  async joinLobbyByInviteCode(
+    inviteCode: string,
+    user: User
+  ): Promise<{ lobby: LobbyWithParticipants; participant: LobbyParticipant } | null> {
+    const lobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.inviteCode, inviteCode.toUpperCase()),
+      with: {
+        host: true,
+        participants: {
+          with: { user: true },
+        },
+      },
+    });
+
+    if (!lobby) return null;
+
+    if (!lobby.isTwitchLobby) {
+      throw new Error('Invite codes are only valid for Twitch lobbies');
+    }
+
+    if (lobby.status !== 'waiting') {
+      throw new Error('Lobby is not accepting new participants');
+    }
+
+    // Count non-spectator participants
+    const playerCount = lobby.participants.filter((p) => p.team !== 'spectator').length;
+    if (playerCount >= lobby.maxPlayers) {
+      throw new Error('Lobby is full');
+    }
+
+    // Check if user is already in lobby
+    const existing = lobby.participants.find((p) => p.userId === user.id);
+    if (existing) {
+      return {
+        lobby: toLobbyWithParticipants(lobby, lobby.participants, lobby.host),
+        participant: existing,
+      };
+    }
+
+    const [participant] = await db
+      .insert(lobbyParticipants)
+      .values({
+        id: nanoid(),
+        lobbyId: lobby.id,
+        userId: user.id,
+        team: 'unassigned',
+      })
+      .returning();
+
+    const updatedParticipants = [
+      ...lobby.participants,
+      { ...participant, user },
+    ];
+
+    return {
+      lobby: toLobbyWithParticipants(lobby, updatedParticipants, lobby.host),
+      participant,
     };
   }
 
@@ -674,11 +737,12 @@ export class LobbyManager {
     }
 
     const code = generateCode();
+    const inviteCode = generateInviteCode(); // Separate code for direct invites
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + this.config.LOBBY_EXPIRY_HOURS);
 
-    // Auto-generate name like public lobbies
-    const lobbyName = `${hostUser.twitchDisplayName || hostUser.displayName}'s Lobby ${code}`;
+    // Auto-generate name without code (so viewers can't bypass waitlist)
+    const lobbyName = `${hostUser.twitchDisplayName || hostUser.displayName}'s Lobby`;
     const twitchStreamUrl = `https://twitch.tv/${hostUser.twitchUsername}`;
 
     const [lobby] = await db
@@ -694,6 +758,7 @@ export class LobbyManager {
         isTwitchLobby: true,
         twitchAcceptingPlayers: false, // Host must explicitly start accepting
         twitchStreamUrl,
+        inviteCode, // Separate from URL code to prevent waitlist bypass
         expiresAt: expiresAt.toISOString(),
       })
       .returning();

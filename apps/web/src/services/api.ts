@@ -109,6 +109,14 @@ class ApiClient {
     return result;
   }
 
+  // Join Twitch lobby via invite code (bypasses waitlist)
+  async joinByInviteCode(inviteCode: string): Promise<JoinLobbyResponse> {
+    return this.request<JoinLobbyResponse>('/lobbies/twitch/join-invite', {
+      method: 'POST',
+      body: JSON.stringify({ inviteCode }),
+    });
+  }
+
   async leaveLobby(code: string): Promise<void> {
     await this.request(`/lobbies/${code}/leave`, { method: 'POST' });
     localStorage.removeItem('anonymousSessionToken');

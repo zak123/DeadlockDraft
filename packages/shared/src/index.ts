@@ -68,6 +68,7 @@ export interface Lobby {
   isTwitchLobby: boolean;
   twitchAcceptingPlayers: boolean;
   twitchStreamUrl: string | null;
+  inviteCode: string | null; // Separate from URL code for Twitch lobbies
   draftCompletedAt: string | null;
   createdAt: string;
   updatedAt: string;

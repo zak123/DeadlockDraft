@@ -41,11 +41,12 @@ export function TwitchLobbiesPanel() {
 
   const handleJoinQueue = async (code: string) => {
     if (!user) {
-      // Redirect to Steam login first
-      window.location.href = api.getSteamLoginUrl(`/lobby/${code}`);
+      // Redirect to Steam login first, then to waitlist
+      window.location.href = api.getSteamLoginUrl(`/lobby/${code}?waitlist=true`);
       return;
     }
-    navigate(`/lobby/${code}`);
+    // Navigate with waitlist param so they join waitlist, not directly
+    navigate(`/lobby/${code}?waitlist=true`);
   };
 
   if (loading && lobbies.length === 0) {

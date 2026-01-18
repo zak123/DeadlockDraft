@@ -129,6 +129,39 @@ lobbies.post('/twitch', requireAuth, async (c) => {
   }
 });
 
+// Join Twitch lobby via invite code (bypasses waitlist)
+lobbies.post('/twitch/join-invite', requireAuth, async (c) => {
+  const user = getAuthUser(c);
+  const body = await c.req.json<{ inviteCode: string }>();
+
+  const joinInviteSchema = z.object({
+    inviteCode: z.string().min(1).max(20),
+  });
+
+  const validated = joinInviteSchema.parse(body);
+
+  try {
+    const result = await lobbyManager.joinLobbyByInviteCode(validated.inviteCode, user);
+
+    if (!result) {
+      throw new HTTPException(404, { message: 'Invalid invite code' });
+    }
+
+    // Broadcast to other participants
+    await wsManager.broadcastLobbyUpdate(result.lobby.code);
+
+    return c.json<JoinLobbyResponse>({
+      lobby: result.lobby,
+      participant: result.participant,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new HTTPException(400, { message: error.message });
+    }
+    throw error;
+  }
+});
+
 // Create lobby (requires auth)
 lobbies.post('/', requireAuth, async (c) => {
   const user = getAuthUser(c);

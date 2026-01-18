@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useLobby } from '../hooks/useLobby';
 import { useDraft } from '../hooks/useDraft';
@@ -18,7 +18,11 @@ import { SteamLoginButton } from '../components/auth/SteamLoginButton';
 export function Lobby() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
+
+  // Check if user came from "Join Queue" button (should join waitlist, not directly)
+  const shouldJoinWaitlist = searchParams.get('waitlist') === 'true';
   const { lobby, loading, error, setReady, moveToTeam, setCaptain, changeSelfTeam, updateLobbySettings, createMatch, readyMatch, refresh } = useLobby(code || null);
   const {
     draftState,
@@ -116,17 +120,25 @@ export function Lobby() {
   };
 
   // Auto-join for authenticated Steam users, show modal for guests
-  // Twitch lobbies require joining waitlist instead of direct join
+  // Users with the lobby code can join directly (even for Twitch lobbies)
+  // The waitlist is for viewers who find the lobby via the Twitch lobbies panel (?waitlist=true)
   useEffect(() => {
-    if (!loading && !authLoading && lobby && !isInLobby) {
-      // For Twitch lobbies, don't auto-join - show waitlist UI instead
-      if (isTwitchLobby) {
-        // Don't show join modal for Twitch lobbies - they have their own flow
-        return;
-      }
-
+    if (!loading && !authLoading && lobby && !isInLobby && !userIsInWaitlist) {
       if (user) {
-        // Auto-join for authenticated users (non-Twitch lobbies)
+        // If came from "Join Queue" button for Twitch lobby, join waitlist instead
+        if (shouldJoinWaitlist && isTwitchLobby) {
+          joinWaitlist()
+            .then(() => {
+              // Clear the query param after joining
+              setSearchParams({});
+            })
+            .catch((err) => {
+              console.error('Failed to join waitlist:', err);
+            });
+          return;
+        }
+
+        // Auto-join for authenticated users (including Twitch lobbies if they have the code)
         api.joinLobby(code!)
           .then((result) => {
             setJoinedParticipantId(result.participant.id);
@@ -135,14 +147,19 @@ export function Lobby() {
           })
           .catch((err) => {
             console.error('Failed to auto-join:', err);
-            setShowJoinModal(true);
+            // For Twitch lobbies, if join fails (e.g., lobby full), don't show modal
+            // They can use the waitlist instead
+            if (!isTwitchLobby) {
+              setShowJoinModal(true);
+            }
           });
-      } else {
-        // Show join modal for guests
+      } else if (!isTwitchLobby) {
+        // Show join modal for guests (non-Twitch lobbies only)
+        // Twitch lobbies require Steam auth to join waitlist
         setShowJoinModal(true);
       }
     }
-  }, [loading, authLoading, lobby, isInLobby, isTwitchLobby, user, code, refresh]);
+  }, [loading, authLoading, lobby, isInLobby, isTwitchLobby, user, code, refresh, shouldJoinWaitlist, userIsInWaitlist, joinWaitlist, setSearchParams]);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
