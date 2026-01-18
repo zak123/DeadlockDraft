@@ -60,13 +60,16 @@ export function Home() {
 
   const handleCreateLobby = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!lobbyName.trim()) return;
+    if (!isPublic && !lobbyName.trim()) return;
 
     setCreating(true);
     setError('');
 
     try {
-      const lobby = await api.createLobby({ name: lobbyName.trim(), isPublic });
+      const lobby = await api.createLobby({
+        name: isPublic ? undefined : lobbyName.trim(),
+        isPublic
+      });
       navigate(`/lobby/${lobby.code}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create lobby');
@@ -223,13 +226,6 @@ export function Home() {
         title="Create Lobby"
       >
         <form onSubmit={handleCreateLobby} className="space-y-4">
-          <Input
-            label="Lobby Name"
-            placeholder="My Custom Match"
-            value={lobbyName}
-            onChange={(e) => setLobbyName(e.target.value)}
-            maxLength={100}
-          />
           <div className="flex items-center justify-between">
             <div>
               <div className="font-medium">Public Lobby</div>
@@ -251,6 +247,20 @@ export function Home() {
               />
             </button>
           </div>
+          {isPublic ? (
+            <div className="p-3 bg-deadlock-bg rounded-lg">
+              <div className="text-sm text-deadlock-muted">Lobby name will be:</div>
+              <div className="font-medium">{user?.displayName}'s Lobby [CODE]</div>
+            </div>
+          ) : (
+            <Input
+              label="Lobby Name"
+              placeholder="My Custom Match"
+              value={lobbyName}
+              onChange={(e) => setLobbyName(e.target.value)}
+              maxLength={100}
+            />
+          )}
           {error && <p className="text-sm text-red-500">{error}</p>}
           <div className="flex gap-3 justify-end">
             <Button
@@ -260,7 +270,7 @@ export function Home() {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!lobbyName.trim() || creating}>
+            <Button type="submit" disabled={(!isPublic && !lobbyName.trim()) || creating}>
               {creating ? 'Creating...' : 'Create Lobby'}
             </Button>
           </div>

@@ -19,7 +19,7 @@ const lobbies = new Hono<{ Variables: AuthVariables }>();
 
 // Validation schemas
 const createLobbySchema = z.object({
-  name: z.string().min(1).max(100),
+  name: z.string().min(1).max(100).optional(),
   matchConfig: z
     .object({
       gameMode: z.string().optional(),

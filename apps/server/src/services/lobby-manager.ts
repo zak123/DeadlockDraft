@@ -58,7 +58,7 @@ export class LobbyManager {
 
   async createLobby(
     hostUser: User,
-    name: string,
+    name: string | undefined,
     matchConfig?: Partial<MatchConfig>,
     maxPlayers?: number,
     isPublic?: boolean
@@ -67,12 +67,17 @@ export class LobbyManager {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + this.config.LOBBY_EXPIRY_HOURS);
 
+    // Auto-generate name for public lobbies
+    const lobbyName = isPublic
+      ? `${hostUser.displayName}'s Lobby ${code}`
+      : name || 'My Lobby';
+
     const [lobby] = await db
       .insert(lobbies)
       .values({
         id: nanoid(),
         code,
-        name,
+        name: lobbyName,
         hostUserId: hostUser.id,
         matchConfig: { ...DEFAULT_MATCH_CONFIG, ...matchConfig },
         maxPlayers: maxPlayers || DEFAULT_MAX_PLAYERS,

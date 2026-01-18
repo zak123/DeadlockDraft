@@ -79,7 +79,7 @@ export interface LobbyWithParticipants extends Lobby {
 
 // API Request/Response types
 export interface CreateLobbyRequest {
-  name: string;
+  name?: string;
   matchConfig?: Partial<MatchConfig>;
   maxPlayers?: number;
   isPublic?: boolean;
