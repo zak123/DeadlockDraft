@@ -118,6 +118,9 @@ export interface CreateLobbyRequest {
 
 export interface GetPublicLobbiesResponse {
   lobbies: LobbyWithParticipants[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface CreateLobbyResponse {

@@ -77,9 +77,13 @@ class ApiClient {
   }
 
   // Lobbies
-  async getPublicLobbies(): Promise<LobbyWithParticipants[]> {
-    const result = await this.request<GetPublicLobbiesResponse>('/lobbies/public');
-    return result.lobbies;
+  async getPublicLobbies(page: number = 1, pageSize: number = 5): Promise<{
+    lobbies: LobbyWithParticipants[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+  }> {
+    return this.request<GetPublicLobbiesResponse>(`/lobbies/public?page=${page}&pageSize=${pageSize}`);
   }
 
   async createLobby(data: CreateLobbyRequest): Promise<LobbyWithParticipants> {

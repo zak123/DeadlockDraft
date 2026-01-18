@@ -22,28 +22,27 @@ export function Home() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [publicLobbies, setPublicLobbies] = useState<LobbyWithParticipants[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loadingLobbies, setLoadingLobbies] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const hasTwitchLinked = !!user?.twitchId;
 
-  const LOBBIES_PER_PAGE = 5;
-  const totalPages = Math.ceil(publicLobbies.length / LOBBIES_PER_PAGE);
-  const paginatedLobbies = publicLobbies.slice(
-    currentPage * LOBBIES_PER_PAGE,
-    (currentPage + 1) * LOBBIES_PER_PAGE
-  );
+  const PAGE_SIZE = 5;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   useEffect(() => {
     const fetchPublicLobbies = async () => {
       try {
-        const lobbies = await api.getPublicLobbies();
-        setPublicLobbies(lobbies);
-        // Reset to first page if current page would be out of bounds
-        setCurrentPage((prev) => {
-          const maxPage = Math.max(0, Math.ceil(lobbies.length / LOBBIES_PER_PAGE) - 1);
-          return prev > maxPage ? maxPage : prev;
-        });
+        setLoadingLobbies(true);
+        const result = await api.getPublicLobbies(currentPage, PAGE_SIZE);
+        setPublicLobbies(result.lobbies);
+        setTotalCount(result.totalCount);
+        // Reset to last valid page if current page is out of bounds
+        const maxPage = Math.max(1, Math.ceil(result.totalCount / PAGE_SIZE));
+        if (currentPage > maxPage) {
+          setCurrentPage(maxPage);
+        }
       } catch (err) {
         console.error('Failed to fetch public lobbies:', err);
       } finally {
@@ -55,7 +54,7 @@ export function Home() {
     // Refresh every 30 seconds
     const interval = setInterval(fetchPublicLobbies, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentPage]);
 
   const handleJoinLobby = (e: React.FormEvent) => {
     e.preventDefault();
@@ -221,7 +220,7 @@ export function Home() {
               </p>
             ) : (
               <div className="space-y-3">
-                {paginatedLobbies.map((lobby) => (
+                {publicLobbies.map((lobby) => (
                   <div
                     key={lobby.id}
                     className="flex items-center justify-between p-3 bg-deadlock-bg rounded-lg hover:bg-deadlock-border transition-colors"
@@ -243,8 +242,8 @@ export function Home() {
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-4 pt-2">
                     <button
-                      onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-                      disabled={currentPage === 0}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
                       className="p-1 rounded hover:bg-deadlock-border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -252,11 +251,11 @@ export function Home() {
                       </svg>
                     </button>
                     <span className="text-sm text-deadlock-muted">
-                      {currentPage + 1} / {totalPages}
+                      {currentPage} / {totalPages}
                     </span>
                     <button
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-                      disabled={currentPage === totalPages - 1}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
                       className="p-1 rounded hover:bg-deadlock-border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

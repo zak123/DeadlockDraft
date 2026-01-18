@@ -789,7 +789,10 @@ export class LobbyManager {
     return participant || null;
   }
 
-  async getPublicLobbies(): Promise<LobbyWithParticipants[]> {
+  async getPublicLobbies(page: number = 1, pageSize: number = 5): Promise<{
+    lobbies: LobbyWithParticipants[];
+    totalCount: number;
+  }> {
     const publicLobbies = await db.query.lobbies.findMany({
       where: and(eq(lobbies.isPublic, true), eq(lobbies.status, 'waiting')),
       with: {
@@ -801,9 +804,16 @@ export class LobbyManager {
       orderBy: (lobbies, { desc }) => [desc(lobbies.createdAt)],
     });
 
-    return publicLobbies.map((lobby) =>
-      toLobbyWithParticipants(lobby, lobby.participants, lobby.host)
-    );
+    const totalCount = publicLobbies.length;
+    const offset = (page - 1) * pageSize;
+    const paginatedLobbies = publicLobbies.slice(offset, offset + pageSize);
+
+    return {
+      lobbies: paginatedLobbies.map((lobby) =>
+        toLobbyWithParticipants(lobby, lobby.participants, lobby.host)
+      ),
+      totalCount,
+    };
   }
 
   async createTwitchLobby(

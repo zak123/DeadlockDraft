@@ -11,6 +11,7 @@ import type {
   CreateLobbyResponse,
   CreateTwitchLobbyRequest,
   CreateTwitchLobbyResponse,
+  GetPublicLobbiesResponse,
   GetTwitchLobbiesResponse,
   GetWaitlistResponse,
   ToggleAcceptingPlayersRequest,
@@ -73,8 +74,17 @@ const setCaptainSchema = z.object({
 
 // Get public lobbies
 lobbies.get('/public', async (c) => {
-  const publicLobbies = await lobbyManager.getPublicLobbies();
-  return c.json({ lobbies: publicLobbies });
+  const page = parseInt(c.req.query('page') || '1', 10);
+  const pageSize = parseInt(c.req.query('pageSize') || '5', 10);
+
+  const result = await lobbyManager.getPublicLobbies(page, pageSize);
+
+  return c.json<GetPublicLobbiesResponse>({
+    lobbies: result.lobbies,
+    totalCount: result.totalCount,
+    page,
+    pageSize,
+  });
 });
 
 // Get Twitch lobbies (must be before /:code route)
