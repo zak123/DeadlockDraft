@@ -1,5 +1,5 @@
 import { db, lobbies, lobbyParticipants } from '../db';
-import { eq, and, lt } from 'drizzle-orm';
+import { eq, and, lt, sql } from 'drizzle-orm';
 import { nanoid, customAlphabet } from 'nanoid';
 import { getConfig } from '../config/env';
 import { DEFAULT_MATCH_CONFIG, LOBBY_CODE_LENGTH, DEFAULT_MAX_PLAYERS, MAX_SPECTATORS } from '../config/match-defaults';
@@ -969,6 +969,26 @@ export class LobbyManager {
 
     if (lobby.hostUserId !== hostUserId) {
       throw new Error('Only the host can toggle accepting players');
+    }
+
+    // When opening queue, close any other Twitch lobbies from the same host
+    // to prevent duplicate listings
+    if (accepting) {
+      await db
+        .update(lobbies)
+        .set({
+          twitchAcceptingPlayers: false,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(
+          and(
+            eq(lobbies.hostUserId, hostUserId),
+            eq(lobbies.isTwitchLobby, true),
+            eq(lobbies.twitchAcceptingPlayers, true),
+            // Don't close the current lobby
+            sql`${lobbies.id} != ${lobby.id}`
+          )
+        );
     }
 
     const [updated] = await db
