@@ -35,7 +35,6 @@ export function Lobby() {
     kickParticipant,
     changeSelfTeam,
     updateLobbySettings,
-    createMatch,
     readyMatch,
     refresh,
   } = useLobby(code || null);
@@ -286,6 +285,10 @@ export function Lobby() {
     }
   };
 
+  const handleSetPartyCode = async (partyCode: string) => {
+    await api.setPartyCode(code!, partyCode);
+  };
+
   if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -361,7 +364,7 @@ export function Lobby() {
                 onMakePick={makePick}
                 isHost={isHost}
                 onCancelDraft={cancelDraft}
-                onCreateMatch={createMatch}
+                onSetPartyCode={handleSetPartyCode}
                 partyCode={partyCode || lobby.deadlockPartyCode}
               />
               <LobbyChat

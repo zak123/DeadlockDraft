@@ -251,6 +251,13 @@ class ApiClient {
     await this.request(`/lobbies/${code}/draft`, { method: 'DELETE' });
   }
 
+  async setPartyCode(code: string, partyCode: string): Promise<void> {
+    await this.request(`/lobbies/${code}/draft/party-code`, {
+      method: 'POST',
+      body: JSON.stringify({ partyCode }),
+    });
+  }
+
   // Twitch Auth
   getTwitchLoginUrl(returnTo?: string): string {
     const params = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';

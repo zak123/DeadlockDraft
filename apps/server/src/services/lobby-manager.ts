@@ -130,6 +130,24 @@ export class LobbyManager {
     return toLobbyWithParticipants(lobby, lobby.participants, lobby.host);
   }
 
+  async setPartyCode(code: string, partyCode: string): Promise<LobbyWithParticipants | null> {
+    const lobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.code, code.toUpperCase()),
+    });
+
+    if (!lobby) return null;
+
+    await db
+      .update(lobbies)
+      .set({
+        deadlockPartyCode: partyCode,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(lobbies.id, lobby.id));
+
+    return this.getLobbyByCode(code);
+  }
+
   async joinLobby(
     code: string,
     user?: User,

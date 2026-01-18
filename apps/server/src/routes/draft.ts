@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { HTTPException } from 'hono/http-exception';
 import { draftManager } from '../services/draft-manager';
 import { lobbyManager } from '../services/lobby-manager';
+import { wsManager } from '../services/websocket';
 import { requireAuth, optionalAuth, getAuthUser, type AuthVariables } from '../middleware/auth';
 import type {
   UpdateDraftConfigRequest,
@@ -153,6 +154,52 @@ draft.get('/:code/draft/state', async (c) => {
 
   const draftState = await draftManager.getDraftState(lobby.id);
   return c.json<GetDraftStateResponse>({ draftState });
+});
+
+// Set party code manually (host only, for when API fails)
+const setPartyCodeSchema = z.object({
+  partyCode: z.string().min(1).max(20),
+});
+
+draft.post('/:code/draft/party-code', requireAuth, async (c) => {
+  const code = c.req.param('code');
+  const user = getAuthUser(c);
+  const body = await c.req.json();
+  const validated = setPartyCodeSchema.parse(body);
+
+  const lobby = await lobbyManager.getLobbyByCode(code);
+
+  if (!lobby) {
+    throw new HTTPException(404, { message: 'Lobby not found' });
+  }
+
+  if (lobby.hostUserId !== user.id) {
+    throw new HTTPException(403, { message: 'Only the host can set the party code' });
+  }
+
+  if (lobby.status !== 'completed') {
+    throw new HTTPException(400, { message: 'Draft must be completed to set party code' });
+  }
+
+  // Save the party code
+  const updatedLobby = await lobbyManager.setPartyCode(code, validated.partyCode);
+
+  if (!updatedLobby) {
+    throw new HTTPException(500, { message: 'Failed to save party code' });
+  }
+
+  // Broadcast to all clients
+  wsManager.broadcastToLobby(code, {
+    type: 'draft:party-created',
+    partyCode: validated.partyCode,
+  });
+
+  wsManager.broadcastSystemMessage(
+    code,
+    'Party code set! Click to reveal the code above, then enter it in Deadlock.'
+  );
+
+  return c.json({ success: true, partyCode: validated.partyCode });
 });
 
 export { draft };

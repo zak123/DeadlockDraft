@@ -12,7 +12,7 @@ interface DraftViewProps {
   onMakePick: (heroId: string) => void;
   isHost: boolean;
   onCancelDraft: () => Promise<void>;
-  onCreateMatch: () => Promise<unknown>;
+  onSetPartyCode: (partyCode: string) => Promise<void>;
   partyCode: string | null;
 }
 
@@ -23,16 +23,18 @@ export function DraftView({
   onMakePick,
   isHost,
   onCancelDraft,
-  onCreateMatch,
+  onSetPartyCode,
   partyCode,
 }: DraftViewProps) {
   const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [creatingMatch, setCreatingMatch] = useState(false);
   const [showPartyCodeCopied, setShowPartyCodeCopied] = useState(false);
   const [showPartyCode, setShowPartyCode] = useState(false);
+  const [manualPartyCode, setManualPartyCode] = useState('');
+  const [savingPartyCode, setSavingPartyCode] = useState(false);
+  const [partyCodeError, setPartyCodeError] = useState<string | null>(null);
 
   const { session, config, picks, availableHeroes, currentTurnTimeRemaining } = draftState;
 
@@ -201,14 +203,22 @@ export function DraftView({
     }
   }, [onCancelDraft]);
 
-  const handleCreateMatch = useCallback(async () => {
-    setCreatingMatch(true);
-    try {
-      await onCreateMatch();
-    } finally {
-      setCreatingMatch(false);
+  const handleSavePartyCode = useCallback(async () => {
+    if (!manualPartyCode.trim()) {
+      setPartyCodeError('Please enter a party code');
+      return;
     }
-  }, [onCreateMatch]);
+    setSavingPartyCode(true);
+    setPartyCodeError(null);
+    try {
+      await onSetPartyCode(manualPartyCode.trim().toUpperCase());
+      setManualPartyCode('');
+    } catch (err) {
+      setPartyCodeError(err instanceof Error ? err.message : 'Failed to save party code');
+    } finally {
+      setSavingPartyCode(false);
+    }
+  }, [manualPartyCode, onSetPartyCode]);
 
   const handleCopyPartyCode = () => {
     if (partyCode) {
@@ -278,14 +288,45 @@ export function DraftView({
               Open Deadlock → Play → Custom → Enter Party Code
             </p>
           </div>
+        ) : isHost ? (
+          <div className="bg-amber/10 border border-amber/30 rounded-xl p-6 max-w-lg w-full">
+            <h3 className="text-lg font-bold text-amber mb-3">Create Party Manually</h3>
+            <div className="text-left text-sm text-deadlock-muted space-y-2 mb-4">
+              <p>1. Open <span className="text-white font-medium">Deadlock</span></p>
+              <p>2. Go to <span className="text-white font-medium">Play → Custom → Create Party</span></p>
+              <p>3. Copy the party code shown in Deadlock</p>
+              <p>4. Paste it below to share with your team</p>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={manualPartyCode}
+                onChange={(e) => setManualPartyCode(e.target.value.toUpperCase())}
+                placeholder="Enter party code (e.g. LGDC5)"
+                className="flex-1 px-4 py-2 bg-deadlock-bg border border-deadlock-border rounded-lg text-white font-mono text-lg tracking-wider placeholder:text-deadlock-muted placeholder:font-sans placeholder:text-sm focus:outline-none focus:border-amber"
+                maxLength={10}
+              />
+              <button
+                onClick={handleSavePartyCode}
+                disabled={savingPartyCode || !manualPartyCode.trim()}
+                className="px-6 py-2 bg-amber hover:bg-amber/80 text-black rounded-lg font-bold transition-colors disabled:opacity-50"
+              >
+                {savingPartyCode ? 'Saving...' : 'Share'}
+              </button>
+            </div>
+            {partyCodeError && (
+              <p className="text-red-400 text-sm mt-2">{partyCodeError}</p>
+            )}
+          </div>
         ) : (
           <div className="bg-deadlock-card border border-deadlock-border rounded-xl p-6 text-center max-w-md w-full">
             <div className="flex items-center justify-center gap-2 mb-2">
               <div className="animate-spin rounded-full h-5 w-5 border-2 border-amber border-t-transparent"></div>
-              <span className="text-deadlock-muted">Creating party...</span>
+              <span className="text-deadlock-muted">Waiting for host...</span>
             </div>
             <p className="text-deadlock-muted text-sm">
-              The party code will appear here when ready
+              The host is creating the party. The code will appear here shortly.
             </p>
           </div>
         )}
@@ -308,17 +349,6 @@ export function DraftView({
             isCurrentTurn={false}
           />
         </div>
-
-        {/* Fallback button if party creation fails */}
-        {isHost && !partyCode && (
-          <button
-            onClick={handleCreateMatch}
-            disabled={creatingMatch}
-            className="px-8 py-3 bg-amber hover:bg-amber/80 text-black rounded-lg font-bold text-lg transition-colors disabled:opacity-50"
-          >
-            {creatingMatch ? 'Creating Match...' : 'Retry Create Match'}
-          </button>
-        )}
       </div>
     );
   }
