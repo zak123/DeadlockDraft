@@ -22,6 +22,7 @@ import type {
   JoinLobbyResponse,
   UpdateLobbyRequest,
   MoveToTeamRequest,
+  SelectHeroRequest,
   Team,
 } from '@deadlock-draft/shared';
 
@@ -680,8 +681,87 @@ lobbies.post('/:code/waitlist/fill-random', requireAuth, async (c) => {
     team: p.team as Team,
     isReady: p.isReady,
     isCaptain: p.isCaptain,
+    selectedHeroId: p.selectedHeroId,
     joinedAt: p.joinedAt,
   })) });
+});
+
+// ===============================
+// Hero Selection Endpoints
+// ===============================
+
+const selectHeroSchema = z.object({
+  heroId: z.string().min(1).max(50),
+});
+
+// Select hero (after draft is completed)
+lobbies.post('/:code/select-hero', optionalAuth, async (c) => {
+  const code = c.req.param('code');
+  const user = c.get('user');
+  const sessionToken = c.req.header('x-session-token');
+  const body = await c.req.json<SelectHeroRequest>();
+  const validated = selectHeroSchema.parse(body);
+
+  try {
+    const result = await lobbyManager.selectHero(
+      code,
+      validated.heroId,
+      user?.id,
+      sessionToken || undefined
+    );
+
+    if (!result) {
+      throw new HTTPException(404, { message: 'Lobby not found' });
+    }
+
+    // Broadcast hero selection to all participants
+    wsManager.broadcastToLobby(code, {
+      type: 'participant:hero-selected',
+      participantId: result.participantId,
+      heroId: result.heroId,
+    });
+
+    return c.json({ success: true, participantId: result.participantId, heroId: result.heroId });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new HTTPException(400, { message: error.message });
+    }
+    throw error;
+  }
+});
+
+// Clear hero selection
+lobbies.delete('/:code/select-hero', optionalAuth, async (c) => {
+  const code = c.req.param('code');
+  const user = c.get('user');
+  const sessionToken = c.req.header('x-session-token');
+
+  try {
+    const result = await lobbyManager.selectHero(
+      code,
+      null,
+      user?.id,
+      sessionToken || undefined
+    );
+
+    if (!result) {
+      throw new HTTPException(404, { message: 'Lobby not found' });
+    }
+
+    // Broadcast hero deselection to all participants
+    wsManager.broadcastToLobby(code, {
+      type: 'participant:hero-selected',
+      participantId: result.participantId,
+      heroId: null,
+    });
+
+    return c.json({ success: true, participantId: result.participantId, heroId: null });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new HTTPException(400, { message: error.message });
+    }
+    throw error;
+  }
 });
 
 export { lobbies };

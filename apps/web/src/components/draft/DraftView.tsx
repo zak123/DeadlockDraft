@@ -3,13 +3,15 @@ import { DraftTimer } from './DraftTimer';
 import { HeroGrid } from './HeroGrid';
 import { TeamDraftPanel } from './TeamDraftPanel';
 import { ConfirmPickModal } from './ConfirmPickModal';
-import type { DraftState, LobbyParticipant, DraftTeam } from '@deadlock-draft/shared';
+import type { DraftState, LobbyParticipant, DraftTeam, DraftPick } from '@deadlock-draft/shared';
 
 interface DraftViewProps {
   draftState: DraftState;
   heroes: string[];
   currentParticipant: LobbyParticipant | null;
+  participants: LobbyParticipant[];
   onMakePick: (heroId: string) => void;
+  onSelectHero: (heroId: string) => Promise<void>;
   isHost: boolean;
   onCancelDraft: () => Promise<void>;
   onSetPartyCode: (partyCode: string) => Promise<void>;
@@ -20,7 +22,9 @@ export function DraftView({
   draftState,
   heroes,
   currentParticipant,
+  participants,
   onMakePick,
+  onSelectHero,
   isHost,
   onCancelDraft,
   onSetPartyCode,
@@ -331,22 +335,25 @@ export function DraftView({
           </div>
         )}
 
+        {/* Hero Selection Instruction */}
+        <div className="text-center text-deadlock-muted text-sm max-w-md">
+          Click a hero on your team to indicate which hero you'd like to play.
+        </div>
+
         <div className="grid grid-cols-2 gap-8 w-full max-w-4xl">
-          <TeamDraftPanel
+          <CompletedTeamPanel
             team="amber"
             picks={teamPicks.amber}
-            bans={teamBans.amber}
-            maxPicks={maxPicksPerTeam}
-            maxBans={teamBans.maxPerTeam}
-            isCurrentTurn={false}
+            participants={participants.filter((p) => p.team === 'amber')}
+            currentParticipant={currentParticipant}
+            onSelectHero={onSelectHero}
           />
-          <TeamDraftPanel
+          <CompletedTeamPanel
             team="sapphire"
             picks={teamPicks.sapphire}
-            bans={teamBans.sapphire}
-            maxPicks={maxPicksPerTeam}
-            maxBans={teamBans.maxPerTeam}
-            isCurrentTurn={false}
+            participants={participants.filter((p) => p.team === 'sapphire')}
+            currentParticipant={currentParticipant}
+            onSelectHero={onSelectHero}
           />
         </div>
       </div>
@@ -470,4 +477,144 @@ export function DraftView({
       />
     </div>
   );
+}
+
+// Component for showing team panel after draft is completed
+interface CompletedTeamPanelProps {
+  team: DraftTeam;
+  picks: DraftPick[];
+  participants: LobbyParticipant[];
+  currentParticipant: LobbyParticipant | null;
+  onSelectHero: (heroId: string) => Promise<void>;
+}
+
+function CompletedTeamPanel({
+  team,
+  picks,
+  participants,
+  currentParticipant,
+  onSelectHero,
+}: CompletedTeamPanelProps) {
+  const teamName = team === 'amber' ? 'Team Amber' : 'Team Sapphire';
+  const isMyTeam = currentParticipant?.team === team;
+
+  const handleHeroClick = async (heroId: string) => {
+    if (!isMyTeam) return;
+
+    // Toggle selection - if already selected, select again to update (could be same hero)
+    await onSelectHero(heroId);
+  };
+
+  return (
+    <div
+      className={`bg-deadlock-card rounded-xl p-4 border ${
+        team === 'amber' ? 'border-amber/20' : 'border-sapphire/20'
+      }`}
+    >
+      <h3
+        className={`text-lg font-bold mb-4 text-center ${
+          team === 'amber' ? 'text-amber' : 'text-sapphire'
+        }`}
+      >
+        {teamName}
+      </h3>
+
+      {/* Picked Heroes */}
+      <div className="mb-4">
+        <div className="text-xs text-deadlock-muted mb-2 uppercase tracking-wide">
+          {isMyTeam ? 'Click to select your hero' : 'Heroes'}
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {picks.map((pick) => (
+            <button
+              key={pick.id}
+              onClick={() => handleHeroClick(pick.heroId)}
+              disabled={!isMyTeam}
+              className={`relative rounded-lg overflow-hidden transition-all ${
+                isMyTeam ? 'hover:scale-105 cursor-pointer hover:ring-2 hover:ring-white' : 'cursor-default'
+              }`}
+              title={isMyTeam ? `Select ${formatHeroName(pick.heroId)}` : formatHeroName(pick.heroId)}
+            >
+              <img
+                src={`/assets/heroes/${pick.heroId}.png`}
+                alt={formatHeroName(pick.heroId)}
+                className="w-full aspect-square object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/assets/heroes/placeholder.png';
+                }}
+              />
+              <div
+                className={`absolute bottom-0 left-0 right-0 h-1 ${
+                  team === 'amber' ? 'bg-amber' : 'bg-sapphire'
+                }`}
+              />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Team Roster */}
+      <div>
+        <div className="text-xs text-deadlock-muted mb-2 uppercase tracking-wide">Players</div>
+        <div className="space-y-2">
+          {participants.map((participant) => {
+            const displayName = participant.user?.displayName || participant.anonymousName || 'Unknown';
+            const selectedHero = participant.selectedHeroId;
+
+            return (
+              <div
+                key={participant.id}
+                className="flex items-center gap-2 p-2 bg-deadlock-bg rounded-lg"
+              >
+                {/* Selected Hero Icon */}
+                {selectedHero ? (
+                  <img
+                    src={`/assets/heroes/${selectedHero}.png`}
+                    alt={formatHeroName(selectedHero)}
+                    className="w-8 h-8 rounded object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/assets/heroes/placeholder.png';
+                    }}
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded bg-deadlock-border flex items-center justify-center text-deadlock-muted text-xs">
+                    ?
+                  </div>
+                )}
+
+                {/* Player Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium truncate text-sm">{displayName}</span>
+                    {participant.id === currentParticipant?.id && (
+                      <span className="px-1.5 py-0.5 text-xs bg-green-500/20 text-green-400 rounded">
+                        You
+                      </span>
+                    )}
+                    {participant.isCaptain && (
+                      <span className="px-1.5 py-0.5 text-xs bg-purple-500/20 text-purple-400 rounded">
+                        Captain
+                      </span>
+                    )}
+                  </div>
+                  {selectedHero && (
+                    <div className="text-xs text-deadlock-muted capitalize">
+                      {formatHeroName(selectedHero)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatHeroName(heroId: string): string {
+  return heroId
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }

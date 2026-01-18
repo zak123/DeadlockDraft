@@ -341,6 +341,20 @@ class ApiClient {
     );
     return result.promoted;
   }
+
+  // Hero Selection (after draft)
+  async selectHero(code: string, heroId: string): Promise<{ participantId: string; heroId: string }> {
+    return this.request(`/lobbies/${code}/select-hero`, {
+      method: 'POST',
+      body: JSON.stringify({ heroId }),
+    });
+  }
+
+  async clearHeroSelection(code: string): Promise<{ participantId: string; heroId: null }> {
+    return this.request(`/lobbies/${code}/select-hero`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const api = new ApiClient();

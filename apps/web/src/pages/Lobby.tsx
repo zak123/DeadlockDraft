@@ -289,6 +289,10 @@ export function Lobby() {
     await api.setPartyCode(code!, partyCode);
   };
 
+  const handleSelectHero = async (heroId: string) => {
+    await api.selectHero(code!, heroId);
+  };
+
   if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -361,7 +365,9 @@ export function Lobby() {
                 draftState={draftState}
                 heroes={heroes}
                 currentParticipant={currentParticipant}
+                participants={lobby.participants}
                 onMakePick={makePick}
+                onSelectHero={handleSelectHero}
                 isHost={isHost}
                 onCancelDraft={cancelDraft}
                 onSetPartyCode={handleSetPartyCode}

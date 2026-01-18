@@ -77,6 +77,20 @@ export function useLobby(code: string | null) {
           },
         ]);
         break;
+      case 'participant:hero-selected':
+        setLobby((prev) =>
+          prev
+            ? {
+                ...prev,
+                participants: prev.participants.map((p) =>
+                  p.id === message.participantId
+                    ? { ...p, selectedHeroId: message.heroId }
+                    : p
+                ),
+              }
+            : null
+        );
+        break;
       case 'error':
         setError(message.message);
         break;

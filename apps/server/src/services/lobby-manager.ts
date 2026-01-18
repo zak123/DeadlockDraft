@@ -60,6 +60,7 @@ function toLobbyWithParticipants(
       team: p.team as Team,
       isReady: p.isReady,
       isCaptain: p.isCaptain,
+      selectedHeroId: p.selectedHeroId,
       joinedAt: p.joinedAt,
       user: p.user ? toPublicUser(p.user) : null,
     })),
@@ -1027,6 +1028,45 @@ export class LobbyManager {
     if (!lobby) return null;
 
     return toLobbyWithParticipants(lobby, lobby.participants, lobby.host);
+  }
+
+  async selectHero(
+    code: string,
+    heroId: string | null,
+    userId?: string,
+    sessionToken?: string
+  ): Promise<{ participantId: string; heroId: string | null } | null> {
+    const lobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.code, code.toUpperCase()),
+      with: {
+        participants: true,
+      },
+    });
+
+    if (!lobby) return null;
+
+    // Find the participant
+    let participant: LobbyParticipant | undefined;
+    if (userId) {
+      participant = lobby.participants.find((p) => p.userId === userId);
+    } else if (sessionToken) {
+      participant = lobby.participants.find((p) => p.sessionToken === sessionToken);
+    }
+
+    if (!participant) {
+      throw new Error('Participant not found');
+    }
+
+    // Update the selected hero
+    await db
+      .update(lobbyParticipants)
+      .set({ selectedHeroId: heroId })
+      .where(eq(lobbyParticipants.id, participant.id));
+
+    return {
+      participantId: participant.id,
+      heroId,
+    };
   }
 }
 

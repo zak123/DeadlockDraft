@@ -86,6 +86,7 @@ export interface LobbyParticipant {
   team: Team;
   isReady: boolean;
   isCaptain: boolean;
+  selectedHeroId: string | null; // Hero the player wants to play after draft
   joinedAt: string;
   user?: PublicUser | null;
 }
@@ -193,6 +194,10 @@ export interface FillFromWaitlistResponse {
   promoted: LobbyParticipant[];
 }
 
+export interface SelectHeroRequest {
+  heroId: string;
+}
+
 export interface AuthResponse {
   user: User;
 }
@@ -226,7 +231,9 @@ export type WSServerMessage =
   | { type: 'waitlist:updated'; waitlist: WaitlistEntry[] }
   | { type: 'waitlist:joined'; entry: WaitlistEntry }
   | { type: 'waitlist:left'; userId: string }
-  | { type: 'waitlist:promoted'; userId: string; participant: LobbyParticipant };
+  | { type: 'waitlist:promoted'; userId: string; participant: LobbyParticipant }
+  // Hero selection events
+  | { type: 'participant:hero-selected'; participantId: string; heroId: string | null };
 
 // Deadlock API types
 export interface DeadlockCreateMatchResponse {
