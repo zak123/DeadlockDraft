@@ -1,0 +1,5 @@
+# Robots.txt for Deadlock Draft
+User-agent: *
+Allow: /
+
+Sitemap: https://deadlockdraft.com/sitemap.xml

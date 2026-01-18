@@ -1,0 +1,16 @@
+{
+  "name": "Deadlock Draft",
+  "short_name": "Deadlock Draft",
+  "description": "Organize Deadlock custom matches with ease. Create lobbies, manage teams, run hero drafts, and coordinate with Twitch streamers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    {
+      "src": "/assets/favicon/deadlock_favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}
