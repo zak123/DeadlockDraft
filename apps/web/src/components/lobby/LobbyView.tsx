@@ -115,23 +115,25 @@ export function LobbyView({
             <h1 className="text-2xl font-bold">{lobby.name}</h1>
             <div className="flex items-center gap-3 mt-2 text-deadlock-muted">
               {lobby.isTwitchLobby ? (
-                // Twitch lobbies: single button to copy secret invite link
-                <div className="relative">
-                  <button
-                    onClick={copyLobbyCode}
-                    className="flex items-center gap-2 px-4 py-2 bg-amber/20 hover:bg-amber/30 text-amber border border-amber/50 rounded-lg transition-colors text-sm font-medium"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                    </svg>
-                    Copy Secret Invite Link
-                  </button>
-                  {showCopiedToast && (
-                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-green-600 text-white text-xs rounded whitespace-nowrap">
-                      Link copied to clipboard
-                    </div>
-                  )}
-                </div>
+                // Twitch lobbies: only host can see/copy secret invite link
+                isHost ? (
+                  <div className="relative">
+                    <button
+                      onClick={copyLobbyCode}
+                      className="flex items-center gap-2 px-4 py-2 bg-amber/20 hover:bg-amber/30 text-amber border border-amber/50 rounded-lg transition-colors text-sm font-medium"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                      Copy Secret Invite Link
+                    </button>
+                    {showCopiedToast && (
+                      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-green-600 text-white text-xs rounded whitespace-nowrap">
+                        Link copied to clipboard
+                      </div>
+                    )}
+                  </div>
+                ) : null
               ) : (
                 // Regular lobbies: show/hide toggle with copy button
                 <div className="relative flex items-center gap-1 bg-deadlock-bg rounded-lg">
@@ -177,7 +179,7 @@ export function LobbyView({
                 )}
               </span>
             </div>
-            {lobby.isTwitchLobby && (
+            {lobby.isTwitchLobby && isHost && (
               <p className="text-xs text-deadlock-muted mt-1">
                 Invite trusted friends by sharing this link, they will skip the waitlist.
               </p>
