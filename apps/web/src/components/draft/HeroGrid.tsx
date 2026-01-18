@@ -63,8 +63,8 @@ export function HeroGrid({
   };
 
   return (
-    <div className="bg-deadlock-card rounded-xl p-4">
-      <div className="grid grid-cols-8 gap-2">
+    <div className="bg-deadlock-card rounded-xl p-2 sm:p-4">
+      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1 sm:gap-2">
         {heroes.map((heroId) => {
           const { isPicked, isBanned, team } = heroStatus[heroId];
           const isAvailable = availableHeroes.includes(heroId);

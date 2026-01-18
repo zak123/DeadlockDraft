@@ -209,7 +209,7 @@ export function DraftConfigModal({
             onClick={onClose}
             className="flex-1 px-4 py-2 bg-deadlock-border hover:bg-deadlock-muted/30 rounded-lg font-medium transition-colors"
           >
-            Cancel
+            Close
           </button>
           <button
             onClick={handleStart}

@@ -263,7 +263,50 @@ export function DraftView({
         remainingPicksInTurn={remainingPicksInTurn}
       />
 
-      <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 items-start">
+      {/* Mobile layout: stacked */}
+      <div className="flex flex-col gap-4 lg:hidden">
+        <div className="grid grid-cols-2 gap-2">
+          <TeamDraftPanel
+            team="amber"
+            picks={teamPicks.amber}
+            bans={teamBans.amber}
+            maxPicks={maxPicksPerTeam}
+            maxBans={teamBans.maxPerTeam}
+            isCurrentTurn={session.currentTeam === 'amber'}
+            phaseType={currentPhaseType}
+          />
+          <TeamDraftPanel
+            team="sapphire"
+            picks={teamPicks.sapphire}
+            bans={teamBans.sapphire}
+            maxPicks={maxPicksPerTeam}
+            maxBans={teamBans.maxPerTeam}
+            isCurrentTurn={session.currentTeam === 'sapphire'}
+            phaseType={currentPhaseType}
+          />
+        </div>
+
+        <HeroGrid
+          heroes={heroes}
+          picks={picks}
+          availableHeroes={availableHeroes}
+          selectedHeroes={selectedHeroes}
+          onSelectHero={handleSelectHero}
+          isMyTurn={isMyTurn}
+          phaseType={currentPhaseType}
+          maxSelections={remainingPicksInTurn}
+        />
+
+        {!isMyTurn && session.status === 'active' && (
+          <div className="text-center text-deadlock-muted">
+            Waiting for {session.currentTeam === 'amber' ? 'Team Amber' : 'Team Sapphire'} to{' '}
+            {currentPhaseType}...
+          </div>
+        )}
+      </div>
+
+      {/* Desktop layout: 3 columns */}
+      <div className="hidden lg:grid grid-cols-[1fr_2fr_1fr] gap-4 items-start">
         <TeamDraftPanel
           team="amber"
           picks={teamPicks.amber}
@@ -285,7 +328,6 @@ export function DraftView({
             phaseType={currentPhaseType}
             maxSelections={remainingPicksInTurn}
           />
-
 
           {!isMyTurn && session.status === 'active' && (
             <div className="text-center text-deadlock-muted">

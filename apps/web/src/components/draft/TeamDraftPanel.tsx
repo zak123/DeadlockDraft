@@ -41,7 +41,7 @@ export function TeamDraftPanel({
       />
       <div
         className={clsx(
-          'relative flex flex-col bg-deadlock-card rounded-xl p-4 transition-all duration-300',
+          'relative flex flex-col bg-deadlock-card rounded-xl p-2 sm:p-4 transition-all duration-300',
           isCurrentTurn && 'ring-2',
           isCurrentTurn && isPicking && 'ring-green-500',
           isCurrentTurn && !isPicking && 'ring-red-500',
@@ -51,7 +51,7 @@ export function TeamDraftPanel({
       >
       <h3
         className={clsx(
-          'text-lg font-bold mb-4 text-center',
+          'text-base sm:text-lg font-bold mb-2 sm:mb-4 text-center',
           team === 'amber' ? 'text-amber' : 'text-sapphire'
         )}
       >
@@ -59,8 +59,8 @@ export function TeamDraftPanel({
       </h3>
 
       <div className="flex-1">
-        <div className="text-xs text-deadlock-muted mb-2 uppercase tracking-wide">Picks</div>
-        <div className="grid grid-cols-2 gap-2 mb-4">
+        <div className="text-xs text-deadlock-muted mb-1 sm:mb-2 uppercase tracking-wide">Picks</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 mb-2 sm:mb-4">
           {picks.map((pick) => (
             <div key={pick.id} className="flex items-center gap-2">
               <HeroCard
@@ -93,8 +93,8 @@ export function TeamDraftPanel({
 
         {maxBans > 0 && (
           <>
-            <div className="text-xs text-deadlock-muted mb-2 uppercase tracking-wide">Bans</div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="text-xs text-deadlock-muted mb-1 sm:mb-2 uppercase tracking-wide">Bans</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2">
               {bans.map((ban) => (
                 <div key={ban.id} className="flex items-center gap-2">
                   <HeroCard
