@@ -360,7 +360,7 @@ export function Home() {
           </div>
           <div className="p-3 bg-deadlock-bg rounded-lg">
             <div className="text-sm text-deadlock-muted">Lobby name will be:</div>
-            <div className="font-medium">{user?.twitchDisplayName || user?.displayName}'s Lobby</div>
+            <div className="font-medium">{user?.twitchDisplayName || user?.displayName}'s Lobby [CODE]</div>
           </div>
           <div className="p-3 bg-deadlock-bg rounded-lg">
             <div className="text-sm text-deadlock-muted">Your Twitch stream will be linked:</div>

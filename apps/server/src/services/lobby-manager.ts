@@ -741,8 +741,8 @@ export class LobbyManager {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + this.config.LOBBY_EXPIRY_HOURS);
 
-    // Auto-generate name without code (so viewers can't bypass waitlist)
-    const lobbyName = `${hostUser.twitchDisplayName || hostUser.displayName}'s Lobby`;
+    // Auto-generate name with code (invite code is now required to skip waitlist)
+    const lobbyName = `${hostUser.twitchDisplayName || hostUser.displayName}'s Lobby ${code}`;
     const twitchStreamUrl = `https://twitch.tv/${hostUser.twitchUsername}`;
 
     const [lobby] = await db
