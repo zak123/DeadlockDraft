@@ -1,13 +1,20 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import type { DraftConfig, UpdateDraftConfigRequest } from '@deadlock-draft/shared';
+import { useState, useEffect, useRef, useCallback } from "react";
+import type {
+  DraftConfig,
+  UpdateDraftConfigRequest,
+} from "@deadlock-draft/shared";
 
 interface DraftConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
   config: DraftConfig | null;
   allowTeamChange: boolean;
-  onSave: (updates: UpdateDraftConfigRequest) => Promise<DraftConfig | undefined>;
-  onUpdateLobbySettings: (settings: { allowTeamChange?: boolean }) => Promise<void>;
+  onSave: (
+    updates: UpdateDraftConfigRequest
+  ) => Promise<DraftConfig | undefined>;
+  onUpdateLobbySettings: (settings: {
+    allowTeamChange?: boolean;
+  }) => Promise<void>;
 }
 
 export function DraftConfigModal({
@@ -40,13 +47,18 @@ export function DraftConfigModal({
     }
   }, [config]);
 
-  const autoSave = useCallback(async (updates: UpdateDraftConfigRequest) => {
-    try {
-      await onSave(updates);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save settings');
-    }
-  }, [onSave]);
+  const autoSave = useCallback(
+    async (updates: UpdateDraftConfigRequest) => {
+      try {
+        await onSave(updates);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to save settings"
+        );
+      }
+    },
+    [onSave]
+  );
 
   // Auto-save when settings change (with debounce for number inputs)
   useEffect(() => {
@@ -67,7 +79,14 @@ export function DraftConfigModal({
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [skipBans, timePerTurn, allowSinglePlayer, timerEnabled, autoSave, isOpen]);
+  }, [
+    skipBans,
+    timePerTurn,
+    allowSinglePlayer,
+    timerEnabled,
+    autoSave,
+    isOpen,
+  ]);
 
   if (!isOpen) return null;
 
@@ -88,12 +107,12 @@ export function DraftConfigModal({
             <button
               onClick={() => setSkipBans(!skipBans)}
               className={`w-14 h-8 rounded-full transition-colors ${
-                skipBans ? 'bg-amber' : 'bg-deadlock-border'
+                skipBans ? "bg-amber" : "bg-deadlock-border"
               }`}
             >
               <div
                 className={`w-6 h-6 bg-white rounded-full transition-transform ${
-                  skipBans ? 'translate-x-7' : 'translate-x-1'
+                  skipBans ? "translate-x-7" : "translate-x-1"
                 }`}
               />
             </button>
@@ -109,12 +128,12 @@ export function DraftConfigModal({
             <button
               onClick={() => setTimerEnabled(!timerEnabled)}
               className={`w-14 h-8 rounded-full transition-colors ${
-                timerEnabled ? 'bg-amber' : 'bg-deadlock-border'
+                timerEnabled ? "bg-amber" : "bg-deadlock-border"
               }`}
             >
               <div
                 className={`w-6 h-6 bg-white rounded-full transition-transform ${
-                  timerEnabled ? 'translate-x-7' : 'translate-x-1'
+                  timerEnabled ? "translate-x-7" : "translate-x-1"
                 }`}
               />
             </button>
@@ -138,20 +157,20 @@ export function DraftConfigModal({
 
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium">Single Player</div>
+              <div className="font-medium">Ignore Player Count</div>
               <div className="text-sm text-deadlock-muted">
-                Draft alone with one player on a team
+                Allow draft to start with less than 6 players per team
               </div>
             </div>
             <button
               onClick={() => setAllowSinglePlayer(!allowSinglePlayer)}
               className={`w-14 h-8 rounded-full transition-colors ${
-                allowSinglePlayer ? 'bg-amber' : 'bg-deadlock-border'
+                allowSinglePlayer ? "bg-amber" : "bg-deadlock-border"
               }`}
             >
               <div
                 className={`w-6 h-6 bg-white rounded-full transition-transform ${
-                  allowSinglePlayer ? 'translate-x-7' : 'translate-x-1'
+                  allowSinglePlayer ? "translate-x-7" : "translate-x-1"
                 }`}
               />
             </button>
@@ -165,14 +184,16 @@ export function DraftConfigModal({
               </div>
             </div>
             <button
-              onClick={() => onUpdateLobbySettings({ allowTeamChange: !allowTeamChange })}
+              onClick={() =>
+                onUpdateLobbySettings({ allowTeamChange: !allowTeamChange })
+              }
               className={`w-14 h-8 rounded-full transition-colors ${
-                allowTeamChange ? 'bg-amber' : 'bg-deadlock-border'
+                allowTeamChange ? "bg-amber" : "bg-deadlock-border"
               }`}
             >
               <div
                 className={`w-6 h-6 bg-white rounded-full transition-transform ${
-                  allowTeamChange ? 'translate-x-7' : 'translate-x-1'
+                  allowTeamChange ? "translate-x-7" : "translate-x-1"
                 }`}
               />
             </button>
@@ -198,7 +219,7 @@ export function DraftConfigModal({
               )}
             </div>
             <div className="text-xs text-deadlock-muted mt-2">
-              Total: {skipBans ? '6 picks' : '2 bans, 6 picks'} per team
+              Total: {skipBans ? "6 picks" : "2 bans, 6 picks"} per team
             </div>
           </div>
 
