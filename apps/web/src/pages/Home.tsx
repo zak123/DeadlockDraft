@@ -56,9 +56,11 @@ export function Home() {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   useEffect(() => {
-    const fetchPublicLobbies = async () => {
+    const fetchPublicLobbies = async (showLoading = false) => {
       try {
-        setLoadingLobbies(true);
+        if (showLoading) {
+          setLoadingLobbies(true);
+        }
         const result = await api.getPublicLobbies(currentPage, PAGE_SIZE);
         setPublicLobbies(result.lobbies);
         setTotalCount(result.totalCount);
@@ -74,9 +76,11 @@ export function Home() {
       }
     };
 
-    fetchPublicLobbies();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchPublicLobbies, 30000);
+    // Show loading spinner on initial load and page changes (user-initiated actions)
+    fetchPublicLobbies(true);
+
+    // Refresh every 30 seconds without showing spinner (background refresh)
+    const interval = setInterval(() => fetchPublicLobbies(false), 30000);
     return () => clearInterval(interval);
   }, [currentPage]);
 

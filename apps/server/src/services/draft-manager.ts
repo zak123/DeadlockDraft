@@ -689,6 +689,9 @@ export class DraftManager {
     wsManager.broadcastToLobby(lobbyCode, {
       type: 'draft:cancelled',
     });
+
+    // Broadcast to chat
+    wsManager.broadcastSystemMessage(lobbyCode, 'Draft has been cancelled by the host.');
   }
 
   async cancelDraftForDisconnect(lobbyCode: string, lobbyId: string, reason: string): Promise<void> {

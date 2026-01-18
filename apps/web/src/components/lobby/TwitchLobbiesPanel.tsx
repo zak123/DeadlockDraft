@@ -31,9 +31,11 @@ export function TwitchLobbiesPanel() {
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  const fetchLobbies = useCallback(async () => {
+  const fetchLobbies = useCallback(async (showLoading = false) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const result = await api.getTwitchLobbies(page, PAGE_SIZE);
       setLobbies(result.lobbies);
       setTotalCount(result.totalCount);
@@ -47,8 +49,11 @@ export function TwitchLobbiesPanel() {
   }, [page]);
 
   useEffect(() => {
-    fetchLobbies();
-    const interval = setInterval(fetchLobbies, 30000);
+    // Show loading spinner on initial load and page changes (user-initiated actions)
+    fetchLobbies(true);
+
+    // Refresh every 30 seconds without showing spinner (background refresh)
+    const interval = setInterval(() => fetchLobbies(false), 30000);
     return () => clearInterval(interval);
   }, [fetchLobbies]);
 
