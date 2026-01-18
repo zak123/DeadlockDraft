@@ -3,8 +3,9 @@ import { eq, and, lt } from 'drizzle-orm';
 import { nanoid, customAlphabet } from 'nanoid';
 import { getConfig } from '../config/env';
 import { DEFAULT_MATCH_CONFIG, LOBBY_CODE_LENGTH, DEFAULT_MAX_PLAYERS, MAX_SPECTATORS } from '../config/match-defaults';
-import type { LobbyWithParticipants, MatchConfig, Team, PublicUser } from '@deadlock-draft/shared';
+import type { LobbyWithParticipants, MatchConfig, Team, PublicUser, TwitchLobbyWithWaitlist } from '@deadlock-draft/shared';
 import type { Lobby, LobbyParticipant, User } from '../db/schema';
+import { twitchAuthService } from './twitch-auth';
 
 const generateCode = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', LOBBY_CODE_LENGTH);
 const generateInviteCode = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 8); // Longer for Twitch invite codes
@@ -860,7 +861,7 @@ export class LobbyManager {
   }
 
   async getTwitchLobbies(page: number = 1, pageSize: number = 5): Promise<{
-    lobbies: (LobbyWithParticipants & { waitlistCount: number })[];
+    lobbies: TwitchLobbyWithWaitlist[];
     totalCount: number;
   }> {
     const oneHourAgo = new Date();
@@ -894,15 +895,39 @@ export class LobbyManager {
       return false;
     });
 
-    const totalCount = filteredLobbies.length;
-    const offset = (page - 1) * pageSize;
-    const paginatedLobbies = filteredLobbies.slice(offset, offset + pageSize);
+    // Get Twitch usernames for viewer count lookup
+    const usernames = filteredLobbies
+      .map((lobby) => lobby.host.twitchUsername)
+      .filter((username): username is string => !!username);
 
-    return {
-      lobbies: paginatedLobbies.map((lobby) => ({
+    // Fetch viewer counts from Twitch API
+    const viewerCounts = await twitchAuthService.getStreamViewerCounts(usernames);
+
+    // Map lobbies with viewer counts and sort by viewer count (highest first)
+    const lobbiesWithViewerCount = filteredLobbies.map((lobby) => {
+      const username = lobby.host.twitchUsername?.toLowerCase();
+      const viewerCount = username ? (viewerCounts.get(username) ?? 0) : 0;
+      return {
         ...toLobbyWithParticipants(lobby, lobby.participants, lobby.host),
         waitlistCount: lobby.waitlist.length,
-      })),
+        viewerCount,
+      };
+    });
+
+    // Sort by viewer count (highest first), then by created date for ties
+    lobbiesWithViewerCount.sort((a, b) => {
+      if (b.viewerCount !== a.viewerCount) {
+        return b.viewerCount - a.viewerCount;
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    const totalCount = lobbiesWithViewerCount.length;
+    const offset = (page - 1) * pageSize;
+    const paginatedLobbies = lobbiesWithViewerCount.slice(offset, offset + pageSize);
+
+    return {
+      lobbies: paginatedLobbies,
       totalCount,
     };
   }

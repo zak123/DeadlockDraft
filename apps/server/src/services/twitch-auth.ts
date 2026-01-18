@@ -26,6 +26,15 @@ interface TwitchUsersResponse {
   data: TwitchUser[];
 }
 
+interface TwitchStream {
+  user_login: string;
+  viewer_count: number;
+}
+
+interface TwitchStreamsResponse {
+  data: TwitchStream[];
+}
+
 export class TwitchAuthService {
   private config = getConfig();
 
@@ -186,6 +195,81 @@ export class TwitchAuthService {
 
   getStreamUrl(twitchUsername: string): string {
     return `https://twitch.tv/${twitchUsername}`;
+  }
+
+  /**
+   * Get viewer counts for multiple Twitch streams.
+   * Uses app access token (client credentials) to avoid per-user token issues.
+   * Returns a map of username (lowercase) -> viewer count.
+   * Streams that are offline will not be in the map.
+   */
+  async getStreamViewerCounts(usernames: string[]): Promise<Map<string, number>> {
+    const viewerCounts = new Map<string, number>();
+
+    if (!this.isConfigured() || usernames.length === 0) {
+      return viewerCounts;
+    }
+
+    try {
+      // Get app access token (client credentials flow)
+      const tokenResponse = await this.getAppAccessToken();
+      if (!tokenResponse) {
+        console.error('Failed to get Twitch app access token');
+        return viewerCounts;
+      }
+
+      // Twitch API allows up to 100 user_login parameters
+      const batchSize = 100;
+      for (let i = 0; i < usernames.length; i += batchSize) {
+        const batch = usernames.slice(i, i + batchSize);
+        const params = new URLSearchParams();
+        batch.forEach((username) => params.append('user_login', username.toLowerCase()));
+
+        const response = await fetch(`${TWITCH_API_URL}/streams?${params.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${tokenResponse.access_token}`,
+            'Client-Id': this.config.TWITCH_CLIENT_ID,
+          },
+        });
+
+        if (!response.ok) {
+          console.error('Failed to get Twitch streams:', await response.text());
+          continue;
+        }
+
+        const data = (await response.json()) as TwitchStreamsResponse;
+        for (const stream of data.data) {
+          viewerCounts.set(stream.user_login.toLowerCase(), stream.viewer_count);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching Twitch stream viewer counts:', error);
+    }
+
+    return viewerCounts;
+  }
+
+  private async getAppAccessToken(): Promise<{ access_token: string } | null> {
+    const params = new URLSearchParams({
+      client_id: this.config.TWITCH_CLIENT_ID,
+      client_secret: this.config.TWITCH_CLIENT_SECRET,
+      grant_type: 'client_credentials',
+    });
+
+    const response = await fetch(TWITCH_TOKEN_URL, {
+      method: 'POST',
+      body: params,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('Failed to get Twitch app access token:', await response.text());
+      return null;
+    }
+
+    return response.json();
   }
 }
 

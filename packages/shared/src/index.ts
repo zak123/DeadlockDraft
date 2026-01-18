@@ -105,6 +105,7 @@ export interface WaitlistEntry {
 
 export interface TwitchLobbyWithWaitlist extends LobbyWithParticipants {
   waitlistCount: number;
+  viewerCount: number; // Live viewer count from Twitch (0 if offline)
 }
 
 // API Request/Response types
