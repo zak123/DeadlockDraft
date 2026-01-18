@@ -3,7 +3,7 @@ import { api } from '../services/api';
 import { wsClient } from '../services/websocket';
 import type { WaitlistEntry, WSServerMessage } from '@deadlock-draft/shared';
 
-export function useWaitlist(code: string | null, lobbyId: string | null, isTwitchLobby: boolean) {
+export function useWaitlist(code: string | null, _lobbyId: string | null, isTwitchLobby: boolean) {
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);

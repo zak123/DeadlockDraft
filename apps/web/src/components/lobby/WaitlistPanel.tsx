@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { WaitlistEntry, LobbyWithParticipants } from '@deadlock-draft/shared';
+import type { WaitlistEntry, LobbyWithParticipants, LobbyParticipant } from '@deadlock-draft/shared';
 import { Button } from '../common/Button';
 
 interface WaitlistPanelProps {
@@ -7,8 +7,8 @@ interface WaitlistPanelProps {
   waitlist: WaitlistEntry[];
   totalCount: number;
   isHost: boolean;
-  onPromote: (userId: string) => Promise<void>;
-  onFillRandom: (count: number) => Promise<void>;
+  onPromote: (userId: string) => Promise<LobbyParticipant>;
+  onFillRandom: (count: number) => Promise<LobbyParticipant[]>;
 }
 
 export function WaitlistPanel({

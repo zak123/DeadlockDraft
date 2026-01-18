@@ -11,7 +11,7 @@ import { api } from '../services/api';
 import type { LobbyWithParticipants } from '@deadlock-draft/shared';
 
 export function Home() {
-  const { user, loading, logout, refresh } = useAuth();
+  const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [joinCode, setJoinCode] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
