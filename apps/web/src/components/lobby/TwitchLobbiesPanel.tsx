@@ -25,6 +25,7 @@ export function TwitchLobbiesPanel() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSteamWarning, setShowSteamWarning] = useState(false);
   const [showTwitchWarning, setShowTwitchWarning] = useState(false);
   const [pendingLobby, setPendingLobby] = useState<TwitchLobbyWithWaitlist | null>(null);
 
@@ -52,11 +53,10 @@ export function TwitchLobbiesPanel() {
   }, [fetchLobbies]);
 
   const handleJoinQueue = async (lobby: TwitchLobbyWithWaitlist) => {
-    const returnUrl = `/lobby/${lobby.code}?waitlist=true`;
-
     if (!user) {
-      // Redirect to Steam login first, then to waitlist
-      window.location.href = api.getSteamLoginUrl(returnUrl);
+      // Show Steam login warning modal
+      setPendingLobby(lobby);
+      setShowSteamWarning(true);
       return;
     }
 
@@ -69,7 +69,13 @@ export function TwitchLobbiesPanel() {
     }
 
     // Navigate with waitlist param so they join waitlist, not directly
-    navigate(returnUrl);
+    navigate(`/lobby/${lobby.code}?waitlist=true`);
+  };
+
+  const handleSteamLogin = () => {
+    if (!pendingLobby) return;
+    const returnUrl = `/lobby/${pendingLobby.code}?waitlist=true`;
+    window.location.href = api.getSteamLoginUrl(returnUrl);
   };
 
   const handleLinkTwitch = () => {
@@ -152,6 +158,44 @@ export function TwitchLobbiesPanel() {
           >
             &gt;
           </button>
+        </div>
+      )}
+
+      {/* Steam Auth Warning Modal */}
+      {showSteamWarning && pendingLobby && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                <SteamIcon />
+              </div>
+              <h3 className="text-xl font-bold text-white">Steam Login Required</h3>
+            </div>
+            <p className="text-gray-300 mb-4">
+              You need to sign in with Steam to join{' '}
+              <span className="text-white font-medium">
+                {pendingLobby.host.twitchDisplayName || pendingLobby.host.displayName}
+              </span>'s lobby queue.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowSteamWarning(false);
+                  setPendingLobby(null);
+                }}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSteamLogin}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors flex items-center gap-2"
+              >
+                <SteamIcon />
+                Sign in with Steam
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -291,5 +335,18 @@ function TwitchIcon({ small }: { small?: boolean }) {
 function LiveIcon() {
   return (
     <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+  );
+}
+
+function SteamIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="currentColor"
+    >
+      <path d="M12 2C6.48 2 2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95 0-5.52-4.48-10-10-10z" />
+    </svg>
   );
 }
