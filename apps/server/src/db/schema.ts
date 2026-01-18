@@ -61,6 +61,7 @@ export const lobbies = sqliteTable('lobbies', {
   isTwitchLobby: integer('is_twitch_lobby', { mode: 'boolean' }).notNull().default(false),
   twitchAcceptingPlayers: integer('twitch_accepting_players', { mode: 'boolean' }).notNull().default(false),
   twitchStreamUrl: text('twitch_stream_url'),
+  twitchSubsOnly: integer('twitch_subs_only', { mode: 'boolean' }).notNull().default(false),
   inviteCode: text('invite_code'), // Separate from URL code for Twitch lobbies
   draftCompletedAt: text('draft_completed_at'),
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),

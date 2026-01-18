@@ -33,6 +33,7 @@ export interface PublicUser {
   displayName: string;
   avatarMedium: string | null;
   // Twitch fields for public display
+  twitchId: string | null;
   twitchUsername: string | null;
   twitchDisplayName: string | null;
   twitchAvatar: string | null;
@@ -68,6 +69,7 @@ export interface Lobby {
   isTwitchLobby: boolean;
   twitchAcceptingPlayers: boolean;
   twitchStreamUrl: string | null;
+  twitchSubsOnly: boolean;
   inviteCode: string | null; // Separate from URL code for Twitch lobbies
   draftCompletedAt: string | null;
   createdAt: string;
@@ -156,6 +158,7 @@ export interface SetCaptainRequest {
 export interface CreateTwitchLobbyRequest {
   matchConfig?: Partial<MatchConfig>;
   maxPlayers?: number;
+  subscribersOnly?: boolean;
 }
 
 export interface CreateTwitchLobbyResponse {

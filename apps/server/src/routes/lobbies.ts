@@ -119,6 +119,7 @@ lobbies.post('/twitch', requireAuth, async (c) => {
       })
       .optional(),
     maxPlayers: z.number().min(2).max(24).optional(),
+    subscribersOnly: z.boolean().optional(),
   });
 
   const validated = createTwitchLobbySchema.parse(body);
@@ -127,7 +128,8 @@ lobbies.post('/twitch', requireAuth, async (c) => {
     const lobby = await lobbyManager.createTwitchLobby(
       user,
       validated.matchConfig,
-      validated.maxPlayers
+      validated.maxPlayers,
+      validated.subscribersOnly
     );
 
     return c.json<CreateTwitchLobbyResponse>({ lobby }, 201);
@@ -538,6 +540,43 @@ lobbies.post('/:code/waitlist/join', requireAuth, async (c) => {
 
   if (!lobby.isTwitchLobby) {
     throw new HTTPException(400, { message: 'Not a Twitch lobby' });
+  }
+
+  // Check subscribers-only restriction
+  if (lobby.twitchSubsOnly) {
+    // User must have Twitch linked
+    if (!user.twitchId || !user.twitchAccessToken) {
+      throw new HTTPException(403, {
+        message: 'This lobby is subscribers-only. Please link your Twitch account first.',
+      });
+    }
+
+    // Get host to check subscription
+    if (!lobby.host.twitchId) {
+      throw new HTTPException(500, { message: 'Host Twitch account not found' });
+    }
+
+    // Get valid access token (refresh if needed)
+    const { twitchAuthService } = await import('../services/twitch-auth');
+    const accessToken = await twitchAuthService.getValidAccessToken(user);
+    if (!accessToken) {
+      throw new HTTPException(403, {
+        message: 'Could not verify Twitch subscription. Please re-link your Twitch account.',
+      });
+    }
+
+    // Check if user is subscribed to host
+    const isSubscribed = await twitchAuthService.isUserSubscribed(
+      accessToken,
+      user.twitchId,
+      lobby.host.twitchId
+    );
+
+    if (!isSubscribed) {
+      throw new HTTPException(403, {
+        message: `This lobby is subscribers-only. You must be subscribed to ${lobby.host.twitchDisplayName || lobby.host.twitchUsername} to join.`,
+      });
+    }
   }
 
   const entry = await waitlistManager.joinWaitlist(lobby.id, user.id);

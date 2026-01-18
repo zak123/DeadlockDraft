@@ -49,14 +49,24 @@ export function TwitchLobbiesPanel() {
     return () => clearInterval(interval);
   }, [fetchLobbies]);
 
-  const handleJoinQueue = async (code: string) => {
+  const handleJoinQueue = async (lobby: TwitchLobbyWithWaitlist) => {
+    const returnUrl = `/lobby/${lobby.code}?waitlist=true`;
+
     if (!user) {
       // Redirect to Steam login first, then to waitlist
-      window.location.href = api.getSteamLoginUrl(`/lobby/${code}?waitlist=true`);
+      window.location.href = api.getSteamLoginUrl(returnUrl);
       return;
     }
+
+    // For sub-only lobbies, user must have Twitch linked
+    if (lobby.twitchSubsOnly && !user.twitchId) {
+      // Redirect to Twitch login, then back to lobby
+      window.location.href = api.getTwitchLoginUrl(returnUrl);
+      return;
+    }
+
     // Navigate with waitlist param so they join waitlist, not directly
-    navigate(`/lobby/${code}?waitlist=true`);
+    navigate(returnUrl);
   };
 
   if (loading && lobbies.length === 0) {
@@ -109,7 +119,7 @@ export function TwitchLobbiesPanel() {
           <TwitchLobbyCard
             key={lobby.id}
             lobby={lobby}
-            onJoinQueue={() => handleJoinQueue(lobby.code)}
+            onJoinQueue={() => handleJoinQueue(lobby)}
           />
         ))}
       </div>
@@ -161,6 +171,11 @@ function TwitchLobbyCard({ lobby, onJoinQueue }: TwitchLobbyCardProps) {
         <div>
           <div className="text-white font-medium flex items-center gap-2">
             {lobby.host.twitchDisplayName || lobby.host.displayName}'s Lobby
+            {lobby.twitchSubsOnly && (
+              <span className="px-1.5 py-0.5 bg-purple-600 text-white text-xs rounded font-medium">
+                Sub Only
+              </span>
+            )}
             {lobby.viewerCount > 0 && (
               <span className="text-red-400 text-sm flex items-center gap-1">
                 <LiveIcon />

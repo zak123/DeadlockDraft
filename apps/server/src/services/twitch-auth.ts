@@ -55,7 +55,7 @@ export class TwitchAuthService {
       client_id: this.config.TWITCH_CLIENT_ID,
       redirect_uri: this.config.TWITCH_REDIRECT_URI,
       response_type: 'code',
-      scope: 'user:read:email',
+      scope: 'user:read:email user:read:subscriptions',
       state,
     });
 
@@ -247,6 +247,91 @@ export class TwitchAuthService {
     }
 
     return viewerCounts;
+  }
+
+  /**
+   * Check if a user is subscribed to a broadcaster's channel.
+   * Requires the viewer's access token with user:read:subscriptions scope.
+   * Returns true if subscribed, false otherwise.
+   */
+  async isUserSubscribed(
+    viewerAccessToken: string,
+    viewerTwitchId: string,
+    broadcasterTwitchId: string
+  ): Promise<boolean> {
+    if (!this.isConfigured()) {
+      throw new Error('Twitch OAuth is not configured');
+    }
+
+    try {
+      const params = new URLSearchParams({
+        broadcaster_id: broadcasterTwitchId,
+        user_id: viewerTwitchId,
+      });
+
+      const response = await fetch(`${TWITCH_API_URL}/subscriptions/user?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${viewerAccessToken}`,
+          'Client-Id': this.config.TWITCH_CLIENT_ID,
+        },
+      });
+
+      if (response.status === 404) {
+        // Not subscribed
+        return false;
+      }
+
+      if (!response.ok) {
+        console.error('Failed to check Twitch subscription:', await response.text());
+        return false;
+      }
+
+      const data = await response.json();
+      // If we get data back, the user is subscribed
+      return data.data && data.data.length > 0;
+    } catch (error) {
+      console.error('Error checking Twitch subscription:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get a valid access token for a user, refreshing if needed.
+   */
+  async getValidAccessToken(user: User): Promise<string | null> {
+    if (!user.twitchAccessToken || !user.twitchRefreshToken) {
+      return null;
+    }
+
+    // Check if token is expired
+    if (user.twitchTokenExpiresAt) {
+      const expiresAt = new Date(user.twitchTokenExpiresAt);
+      const now = new Date();
+      // Refresh if expiring in less than 5 minutes
+      if (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000) {
+        const newTokens = await this.refreshTokens(user.twitchRefreshToken);
+        if (newTokens) {
+          // Update tokens in database
+          const newExpiresAt = new Date();
+          newExpiresAt.setSeconds(newExpiresAt.getSeconds() + newTokens.expires_in);
+
+          await db
+            .update(users)
+            .set({
+              twitchAccessToken: newTokens.access_token,
+              twitchRefreshToken: newTokens.refresh_token,
+              twitchTokenExpiresAt: newExpiresAt.toISOString(),
+              updatedAt: new Date().toISOString(),
+            })
+            .where(eq(users.id, user.id));
+
+          return newTokens.access_token;
+        }
+        return null;
+      }
+    }
+
+    return user.twitchAccessToken;
   }
 
   private async getAppAccessToken(): Promise<{ access_token: string } | null> {

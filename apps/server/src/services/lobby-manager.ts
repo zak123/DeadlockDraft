@@ -16,6 +16,7 @@ function toPublicUser(user: User): PublicUser {
     steamId: user.steamId,
     displayName: user.displayName,
     avatarMedium: user.avatarMedium,
+    twitchId: user.twitchId,
     twitchUsername: user.twitchUsername,
     twitchDisplayName: user.twitchDisplayName,
     twitchAvatar: user.twitchAvatar,
@@ -43,6 +44,7 @@ function toLobbyWithParticipants(
     isTwitchLobby: lobby.isTwitchLobby,
     twitchAcceptingPlayers: lobby.twitchAcceptingPlayers,
     twitchStreamUrl: lobby.twitchStreamUrl,
+    twitchSubsOnly: lobby.twitchSubsOnly,
     inviteCode: lobby.inviteCode,
     draftCompletedAt: lobby.draftCompletedAt,
     createdAt: lobby.createdAt,
@@ -819,7 +821,8 @@ export class LobbyManager {
   async createTwitchLobby(
     hostUser: User,
     matchConfig?: Partial<MatchConfig>,
-    maxPlayers?: number
+    maxPlayers?: number,
+    subscribersOnly?: boolean
   ): Promise<LobbyWithParticipants> {
     if (!hostUser.twitchUsername) {
       throw new Error('Twitch account must be linked to create a Twitch lobby');
@@ -847,6 +850,7 @@ export class LobbyManager {
         isTwitchLobby: true,
         twitchAcceptingPlayers: false, // Host must explicitly start accepting
         twitchStreamUrl,
+        twitchSubsOnly: subscribersOnly || false,
         inviteCode, // Separate from URL code to prevent waitlist bypass
         expiresAt: expiresAt.toISOString(),
       })

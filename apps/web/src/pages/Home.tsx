@@ -19,6 +19,7 @@ export function Home() {
   const [showTwitchCreateModal, setShowTwitchCreateModal] = useState(false);
   const [lobbyName, setLobbyName] = useState('');
   const [isPublic, setIsPublic] = useState(false);
+  const [subscribersOnly, setSubscribersOnly] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [publicLobbies, setPublicLobbies] = useState<LobbyWithParticipants[]>([]);
@@ -89,7 +90,7 @@ export function Home() {
     setError('');
 
     try {
-      const lobby = await api.createTwitchLobby({});
+      const lobby = await api.createTwitchLobby({ subscribersOnly });
       navigate(`/lobby/${lobby.code}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create Twitch lobby');
@@ -331,7 +332,10 @@ export function Home() {
       {/* Create Twitch Lobby Modal */}
       <Modal
         isOpen={showTwitchCreateModal}
-        onClose={() => setShowTwitchCreateModal(false)}
+        onClose={() => {
+          setShowTwitchCreateModal(false);
+          setSubscribersOnly(false);
+        }}
         title="Create Twitch Lobby"
       >
         <div className="space-y-4">
@@ -350,12 +354,41 @@ export function Home() {
               twitch.tv/{user?.twitchUsername}
             </div>
           </div>
+          <div className="flex items-center justify-between p-3 bg-deadlock-bg rounded-lg">
+            <div>
+              <div className="font-medium flex items-center gap-2">
+                Subscribers Only
+                <svg className="w-4 h-4 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+              </div>
+              <div className="text-sm text-deadlock-muted">
+                Only your Twitch subscribers can join the queue
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSubscribersOnly(!subscribersOnly)}
+              className={`w-14 h-8 rounded-full transition-colors ${
+                subscribersOnly ? 'bg-purple-600' : 'bg-deadlock-border'
+              }`}
+            >
+              <div
+                className={`w-6 h-6 bg-white rounded-full transition-transform ${
+                  subscribersOnly ? 'translate-x-7' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <div className="flex gap-3 justify-end">
             <Button
               type="button"
               variant="secondary"
-              onClick={() => setShowTwitchCreateModal(false)}
+              onClick={() => {
+                setShowTwitchCreateModal(false);
+                setSubscribersOnly(false);
+              }}
             >
               Cancel
             </Button>

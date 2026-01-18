@@ -11,6 +11,7 @@ function toPublicUser(user: typeof users.$inferSelect): PublicUser {
     steamId: user.steamId,
     displayName: user.displayName,
     avatarMedium: user.avatarMedium,
+    twitchId: user.twitchId,
     twitchUsername: user.twitchUsername,
     twitchDisplayName: user.twitchDisplayName,
     twitchAvatar: user.twitchAvatar,
