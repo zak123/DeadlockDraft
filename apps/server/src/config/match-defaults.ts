@@ -11,3 +11,4 @@ export const DEFAULT_MATCH_CONFIG: MatchConfig = {
 
 export const LOBBY_CODE_LENGTH = 6;
 export const DEFAULT_MAX_PLAYERS = 12;
+export const MAX_SPECTATORS = 2;

@@ -1,8 +1,8 @@
-import { db, lobbies, lobbyParticipants, users } from '../db';
+import { db, lobbies, lobbyParticipants } from '../db';
 import { eq, and, lt } from 'drizzle-orm';
 import { nanoid, customAlphabet } from 'nanoid';
 import { getConfig } from '../config/env';
-import { DEFAULT_MATCH_CONFIG, LOBBY_CODE_LENGTH, DEFAULT_MAX_PLAYERS } from '../config/match-defaults';
+import { DEFAULT_MATCH_CONFIG, LOBBY_CODE_LENGTH, DEFAULT_MAX_PLAYERS, MAX_SPECTATORS } from '../config/match-defaults';
 import type { LobbyWithParticipants, MatchConfig, Team, PublicUser } from '@deadlock-draft/shared';
 import type { Lobby, LobbyParticipant, User } from '../db/schema';
 
@@ -141,7 +141,9 @@ export class LobbyManager {
       throw new Error('Lobby is not accepting new participants');
     }
 
-    if (lobby.participants.length >= lobby.maxPlayers) {
+    // Count non-spectator participants (spectators have separate slots)
+    const playerCount = lobby.participants.filter((p) => p.team !== 'spectator').length;
+    if (playerCount >= lobby.maxPlayers) {
       throw new Error('Lobby is full');
     }
 
@@ -214,11 +216,34 @@ export class LobbyManager {
       throw new Error('Host cannot leave lobby. Cancel the lobby instead.');
     }
 
+    // If participant was captain, assign a new captain from their team
+    if (participant.isCaptain && (participant.team === 'amber' || participant.team === 'sapphire')) {
+      const remainingTeamMembers = lobby.participants.filter(
+        (p) => p.team === participant!.team && p.id !== participant!.id
+      );
+      if (remainingTeamMembers.length > 0) {
+        await db
+          .update(lobbyParticipants)
+          .set({ isCaptain: true })
+          .where(eq(lobbyParticipants.id, remainingTeamMembers[0].id));
+      }
+    }
+
     await db.delete(lobbyParticipants).where(eq(lobbyParticipants.id, participant.id));
 
-    const updatedParticipants = lobby.participants.filter((p) => p.id !== participant!.id);
+    // Fetch updated state to reflect captain changes
+    const updatedLobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.id, lobby.id),
+      with: {
+        host: true,
+        participants: {
+          with: { user: true },
+        },
+      },
+    });
 
-    return toLobbyWithParticipants(lobby, updatedParticipants, lobby.host);
+    if (!updatedLobby) return null;
+    return toLobbyWithParticipants(updatedLobby, updatedLobby.participants, updatedLobby.host);
   }
 
   async updateLobby(
@@ -299,16 +324,72 @@ export class LobbyManager {
       throw new Error('Participant not found');
     }
 
+    // Check spectator limit when moving to spectator
+    if (team === 'spectator' && participant.team !== 'spectator') {
+      const spectatorCount = lobby.participants.filter((p) => p.team === 'spectator').length;
+      if (spectatorCount >= MAX_SPECTATORS) {
+        throw new Error(`Spectator slots are full (max ${MAX_SPECTATORS})`);
+      }
+    }
+
+    const oldTeam = participant.team;
+    const isMovingToTeam = team === 'amber' || team === 'sapphire';
+    const isLeavingTeam = (oldTeam === 'amber' || oldTeam === 'sapphire') && !isMovingToTeam;
+    const isChangingTeam = (oldTeam === 'amber' || oldTeam === 'sapphire') && isMovingToTeam && oldTeam !== team;
+
+    // Determine if we need to auto-assign captain on new team
+    let shouldBeCaptain = false;
+    if (isMovingToTeam) {
+      const teamHasCaptain = lobby.participants.some(
+        (p) => p.team === team && p.isCaptain && p.id !== participantId
+      );
+      if (!teamHasCaptain) {
+        // Check if there are other members on this team already
+        const teamMembers = lobby.participants.filter(
+          (p) => p.team === team && p.id !== participantId
+        );
+        // If no members or no captain, this participant becomes captain
+        shouldBeCaptain = teamMembers.length === 0 || !teamHasCaptain;
+      }
+    }
+
+    // If leaving a team (to spectator/unassigned) or changing teams, reset captain status
+    const resetCaptain = isLeavingTeam || isChangingTeam;
+
     await db
       .update(lobbyParticipants)
-      .set({ team })
+      .set({
+        team,
+        isCaptain: shouldBeCaptain ? true : (resetCaptain ? false : participant.isCaptain)
+      })
       .where(eq(lobbyParticipants.id, participantId));
 
-    const updatedParticipants = lobby.participants.map((p) =>
-      p.id === participantId ? { ...p, team } : p
-    );
+    // If participant was captain and is leaving their old team, assign new captain
+    if ((isLeavingTeam || isChangingTeam) && participant.isCaptain) {
+      const remainingTeamMembers = lobby.participants.filter(
+        (p) => p.team === oldTeam && p.id !== participantId
+      );
+      if (remainingTeamMembers.length > 0) {
+        await db
+          .update(lobbyParticipants)
+          .set({ isCaptain: true })
+          .where(eq(lobbyParticipants.id, remainingTeamMembers[0].id));
+      }
+    }
 
-    return toLobbyWithParticipants(lobby, updatedParticipants, lobby.host);
+    // Fetch updated state
+    const updatedLobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.id, lobby.id),
+      with: {
+        host: true,
+        participants: {
+          with: { user: true },
+        },
+      },
+    });
+
+    if (!updatedLobby) return null;
+    return toLobbyWithParticipants(updatedLobby, updatedLobby.participants, updatedLobby.host);
   }
 
   async setParticipantCaptain(

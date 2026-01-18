@@ -177,7 +177,7 @@ export function Home() {
                     <div>
                       <div className="font-medium">{lobby.name}</div>
                       <div className="text-sm text-deadlock-muted">
-                        {lobby.participants.length}/{lobby.maxPlayers} players • Hosted by {lobby.host.displayName}
+                        {lobby.participants.filter((p) => p.team !== 'spectator').length}/{lobby.maxPlayers} players • Hosted by {lobby.host.displayName}
                       </div>
                     </div>
                     <Button

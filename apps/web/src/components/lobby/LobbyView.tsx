@@ -67,6 +67,10 @@ export function LobbyView({
     return { readyCount, totalCount, allReady };
   }, [lobby.participants]);
 
+  const playerCount = useMemo(() => {
+    return lobby.participants.filter((p) => p.team !== 'spectator').length;
+  }, [lobby.participants]);
+
   const handleStartDraft = async () => {
     setDraftError(null);
 
@@ -129,7 +133,10 @@ export function LobbyView({
                 </button>
               </div>
               <span className="text-sm">
-                {lobby.participants.length}/{lobby.maxPlayers} players
+                {playerCount}/{lobby.maxPlayers} players
+                {teamGroups.spectator.length > 0 && (
+                  <span className="text-deadlock-muted"> + {teamGroups.spectator.length} spectator{teamGroups.spectator.length !== 1 ? 's' : ''}</span>
+                )}
               </span>
             </div>
           </div>
@@ -210,6 +217,7 @@ export function LobbyView({
           title="Spectators"
           team="spectator"
           participants={teamGroups.spectator}
+          maxSize={2}
           hostUserId={lobby.hostUserId}
           currentUserId={user?.id}
           currentSessionToken={currentSessionToken || undefined}
