@@ -234,14 +234,18 @@ export function LobbyView({
                 >
                   Configure Draft
                 </Button>
-                <button
-                  onClick={handleStartDraft}
-                  disabled={startingDraft || !readyStatus.allReady}
+                <span
                   title={!readyStatus.allReady ? `${readyStatus.readyCount}/${readyStatus.totalCount} players ready` : undefined}
-                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-block"
                 >
-                  {startingDraft ? 'Starting...' : 'Start Draft'}
-                </button>
+                  <button
+                    onClick={handleStartDraft}
+                    disabled={startingDraft || !readyStatus.allReady}
+                    className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {startingDraft ? 'Starting...' : 'Start Draft'}
+                  </button>
+                </span>
               </div>
               {draftError && (
                 <div className="text-red-400 text-sm">{draftError}</div>
