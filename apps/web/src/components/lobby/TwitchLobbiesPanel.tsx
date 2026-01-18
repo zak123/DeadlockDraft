@@ -25,6 +25,8 @@ export function TwitchLobbiesPanel() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showTwitchWarning, setShowTwitchWarning] = useState(false);
+  const [pendingLobby, setPendingLobby] = useState<TwitchLobbyWithWaitlist | null>(null);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
@@ -60,13 +62,20 @@ export function TwitchLobbiesPanel() {
 
     // For sub-only lobbies, user must have Twitch linked
     if (lobby.twitchSubsOnly && !user.twitchId) {
-      // Redirect to Twitch login, then back to lobby
-      window.location.href = api.getTwitchLoginUrl(returnUrl);
+      // Show warning modal instead of immediately redirecting
+      setPendingLobby(lobby);
+      setShowTwitchWarning(true);
       return;
     }
 
     // Navigate with waitlist param so they join waitlist, not directly
     navigate(returnUrl);
+  };
+
+  const handleLinkTwitch = () => {
+    if (!pendingLobby) return;
+    const returnUrl = `/lobby/${pendingLobby.code}?waitlist=true`;
+    window.location.href = api.getTwitchLoginUrl(returnUrl);
   };
 
   if (loading && lobbies.length === 0) {
@@ -143,6 +152,45 @@ export function TwitchLobbiesPanel() {
           >
             &gt;
           </button>
+        </div>
+      )}
+
+      {/* Twitch Auth Warning Modal */}
+      {showTwitchWarning && pendingLobby && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                <TwitchIcon />
+              </div>
+              <h3 className="text-xl font-bold text-white">Twitch Account Required</h3>
+            </div>
+            <p className="text-gray-300 mb-4">
+              This is a <span className="text-purple-400 font-medium">subscribers-only</span> lobby.
+              You need to link your Twitch account so we can verify your subscription to{' '}
+              <span className="text-white font-medium">
+                {pendingLobby.host.twitchDisplayName || pendingLobby.host.displayName}
+              </span>.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowTwitchWarning(false);
+                  setPendingLobby(null);
+                }}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLinkTwitch}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors flex items-center gap-2"
+              >
+                <TwitchIcon small />
+                Link Twitch Account
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
