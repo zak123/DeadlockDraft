@@ -111,14 +111,27 @@ export function LobbyView({
           <div>
             <h1 className="text-2xl font-bold">{lobby.name}</h1>
             <div className="flex items-center gap-3 mt-2 text-deadlock-muted">
-              <div className="relative flex items-center gap-1 bg-deadlock-bg rounded-lg">
-                {lobby.isTwitchLobby ? (
-                  // Twitch lobbies: always hidden, no show/hide button (8 chars for invite code)
-                  <span className="flex items-center gap-2 px-3 py-1">
-                    <span className="font-mono font-semibold text-amber">••••••••</span>
-                  </span>
-                ) : (
-                  // Regular lobbies: show/hide toggle
+              {lobby.isTwitchLobby ? (
+                // Twitch lobbies: single button to copy secret invite code
+                <div className="relative">
+                  <button
+                    onClick={copyLobbyCode}
+                    className="flex items-center gap-2 px-4 py-2 bg-amber/20 hover:bg-amber/30 text-amber border border-amber/50 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Copy Secret Invite Code
+                  </button>
+                  {showCopiedToast && (
+                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-green-600 text-white text-xs rounded whitespace-nowrap">
+                      Code copied to clipboard
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Regular lobbies: show/hide toggle with copy button
+                <div className="relative flex items-center gap-1 bg-deadlock-bg rounded-lg">
                   <button
                     onClick={() => setShowLobbyCode(!showLobbyCode)}
                     className="flex items-center gap-2 px-3 py-1 hover:bg-deadlock-border rounded-l-lg transition-colors"
@@ -138,23 +151,22 @@ export function LobbyView({
                       </svg>
                     )}
                   </button>
-                )}
-                <button
-                  onClick={copyLobbyCode}
-                  className={`px-2 py-1 hover:bg-deadlock-border transition-colors border-l border-deadlock-border ${lobby.isTwitchLobby ? 'rounded-r-lg' : 'rounded-r-lg'}`}
-                  title="Copy code"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                </button>
-                {/* Copied toast */}
-                {showCopiedToast && (
-                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-green-600 text-white text-xs rounded whitespace-nowrap">
-                    Code copied to clipboard
-                  </div>
-                )}
-              </div>
+                  <button
+                    onClick={copyLobbyCode}
+                    className="px-2 py-1 hover:bg-deadlock-border rounded-r-lg transition-colors border-l border-deadlock-border"
+                    title="Copy code"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                  {showCopiedToast && (
+                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-green-600 text-white text-xs rounded whitespace-nowrap">
+                      Code copied to clipboard
+                    </div>
+                  )}
+                </div>
+              )}
               <span className="text-sm">
                 {playerCount}/{lobby.maxPlayers} players
                 {teamGroups.spectator.length > 0 && (
