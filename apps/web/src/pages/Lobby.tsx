@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useLobby } from '../hooks/useLobby';
 import { useDraft } from '../hooks/useDraft';
+import { useChat } from '../hooks/useChat';
 import { api } from '../services/api';
 import { LobbyView } from '../components/lobby/LobbyView';
 import { LobbyChat } from '../components/lobby/LobbyChat';
@@ -26,6 +27,7 @@ export function Lobby() {
     makePick,
     cancelDraft,
   } = useDraft(code || null);
+  const { messages: chatMessages, sendMessage: sendChatMessage } = useChat();
 
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [anonymousName, setAnonymousName] = useState('');
@@ -206,6 +208,8 @@ export function Lobby() {
               <LobbyChat
                 currentUserId={user?.id}
                 currentSessionToken={localStorage.getItem('anonymousSessionToken') || undefined}
+                messages={chatMessages}
+                sendMessage={sendChatMessage}
               />
             </div>
           ) : (
@@ -226,6 +230,8 @@ export function Lobby() {
                 <LobbyChat
                   currentUserId={user?.id}
                   currentSessionToken={localStorage.getItem('anonymousSessionToken') || undefined}
+                  messages={chatMessages}
+                  sendMessage={sendChatMessage}
                 />
               </div>
             </div>

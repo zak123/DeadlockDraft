@@ -1,14 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import clsx from 'clsx';
-import { useChat, type ChatMessage } from '../../hooks/useChat';
+import type { ChatMessage } from '../../hooks/useChat';
 
 interface LobbyChatProps {
   currentUserId?: string;
   currentSessionToken?: string;
+  messages: ChatMessage[];
+  sendMessage: (message: string) => void;
 }
 
-export function LobbyChat({ currentUserId, currentSessionToken }: LobbyChatProps) {
-  const { messages, sendMessage } = useChat();
+export function LobbyChat({ currentUserId, currentSessionToken, messages, sendMessage }: LobbyChatProps) {
   const [input, setInput] = useState('');
   const [isExpanded, setIsExpanded] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
