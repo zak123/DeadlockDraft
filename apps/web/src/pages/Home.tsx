@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { SteamLoginButton } from '../components/auth/SteamLoginButton';
 import { TwitchLoginButton } from '../components/auth/TwitchLoginButton';
@@ -11,9 +11,19 @@ import { api } from '../services/api';
 import { formatTimeAgo } from '../utils/time';
 import type { LobbyWithParticipants } from '@deadlock-draft/shared';
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  twitch_already_linked: 'This Twitch account is already linked to another Steam account.',
+  twitch_auth_denied: 'Twitch authorization was denied.',
+  twitch_auth_invalid_state: 'Twitch authorization failed. Please try again.',
+  twitch_token_exchange_failed: 'Failed to connect to Twitch. Please try again.',
+  twitch_user_fetch_failed: 'Failed to fetch Twitch account info. Please try again.',
+  twitch_link_failed: 'Failed to link Twitch account. Please try again.',
+};
+
 export function Home() {
   const { user, loading, logout, refresh } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [joinCode, setJoinCode] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showTwitchCreateModal, setShowTwitchCreateModal] = useState(false);
@@ -22,12 +32,25 @@ export function Home() {
   const [subscribersOnly, setSubscribersOnly] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
   const [publicLobbies, setPublicLobbies] = useState<LobbyWithParticipants[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loadingLobbies, setLoadingLobbies] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
   const hasTwitchLinked = !!user?.twitchId;
+
+  // Check for auth errors in URL
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      const message = AUTH_ERROR_MESSAGES[errorParam] || 'An authentication error occurred.';
+      setAuthError(message);
+      // Clear the error from URL
+      searchParams.delete('error');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const PAGE_SIZE = 5;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -142,6 +165,26 @@ export function Home() {
               Create or join a lobby to organize your Deadlock custom matches.
             </p>
           </div>
+
+          {/* Auth Error Alert */}
+          {authError && (
+            <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-red-200">{authError}</p>
+              </div>
+              <button
+                onClick={() => setAuthError(null)}
+                className="text-red-400 hover:text-red-300 flex-shrink-0"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
 
           {/* Join Lobby */}
           <div className="card p-6">
