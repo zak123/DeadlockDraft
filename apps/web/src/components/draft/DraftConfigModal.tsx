@@ -26,7 +26,7 @@ export function DraftConfigModal({
   onUpdateLobbySettings,
 }: DraftConfigModalProps) {
   const [skipBans, setSkipBans] = useState(false);
-  const [timePerTurn, setTimePerTurn] = useState(60);
+  const [timePerTurn, setTimePerTurn] = useState(45);
   const [allowSinglePlayer, setAllowSinglePlayer] = useState(false);
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [error, setError] = useState<string | null>(null);

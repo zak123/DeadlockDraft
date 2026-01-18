@@ -94,7 +94,7 @@ export class DraftManager {
           lobbyId,
           skipBans: false,
           phases: DEFAULT_PHASES,
-          timePerTurn: 60,
+          timePerTurn: 45,
           allowSinglePlayer: false,
           timerEnabled: true,
         })
@@ -135,7 +135,7 @@ export class DraftManager {
           lobbyId,
           skipBans: updates.skipBans ?? false,
           phases: updates.phases ?? DEFAULT_PHASES,
-          timePerTurn: updates.timePerTurn ?? 30,
+          timePerTurn: updates.timePerTurn ?? 45,
           allowSinglePlayer: updates.allowSinglePlayer ?? false,
           timerEnabled: updates.timerEnabled ?? true,
         })
