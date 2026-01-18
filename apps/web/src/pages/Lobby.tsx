@@ -32,6 +32,7 @@ export function Lobby() {
     setReady,
     moveToTeam,
     setCaptain,
+    kickParticipant,
     changeSelfTeam,
     updateLobbySettings,
     createMatch,
@@ -454,6 +455,7 @@ export function Lobby() {
                   draftConfig={draftConfig}
                   onMoveToTeam={moveToTeam}
                   onSetCaptain={setCaptain}
+                  onKickParticipant={kickParticipant}
                   onChangeSelfTeam={changeSelfTeam}
                   onSetReady={setReady}
                   onReadyMatch={readyMatch}

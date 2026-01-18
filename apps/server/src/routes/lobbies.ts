@@ -400,6 +400,31 @@ lobbies.patch('/:code/participants/:participantId/captain', requireAuth, async (
   }
 });
 
+// Kick participant (host only)
+lobbies.delete('/:code/participants/:participantId', requireAuth, async (c) => {
+  const code = c.req.param('code');
+  const participantId = c.req.param('participantId');
+  const user = getAuthUser(c);
+
+  try {
+    const lobby = await lobbyManager.kickParticipant(code, user.id, participantId);
+
+    if (!lobby) {
+      throw new HTTPException(404, { message: 'Lobby not found' });
+    }
+
+    // Broadcast update
+    await wsManager.broadcastLobbyUpdate(code);
+
+    return c.json({ lobby });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new HTTPException(400, { message: error.message });
+    }
+    throw error;
+  }
+});
+
 // ===============================
 // Twitch Lobby Endpoints (with :code param)
 // ===============================

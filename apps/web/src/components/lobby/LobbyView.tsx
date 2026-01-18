@@ -10,6 +10,7 @@ interface LobbyViewProps {
   draftConfig: DraftConfig | null;
   onMoveToTeam: (participantId: string, team: Team) => void;
   onSetCaptain: (participantId: string, isCaptain: boolean) => void;
+  onKickParticipant: (participantId: string) => void;
   onChangeSelfTeam: (team: Team) => Promise<void>;
   onSetReady: (isReady: boolean) => void;
   onReadyMatch: () => Promise<void>;
@@ -25,6 +26,7 @@ export function LobbyView({
   draftConfig,
   onMoveToTeam,
   onSetCaptain,
+  onKickParticipant,
   onChangeSelfTeam,
   onSetReady,
   onReadyMatch,
@@ -231,6 +233,7 @@ export function LobbyView({
           onMoveToTeam={onMoveToTeam}
           onSetCaptain={onSetCaptain}
           onChangeSelfTeam={onChangeSelfTeam}
+          onKickParticipant={isHost ? onKickParticipant : undefined}
           allowTeamChange={lobby.allowTeamChange}
           canManage={isHost}
         />
@@ -245,6 +248,7 @@ export function LobbyView({
           onMoveToTeam={onMoveToTeam}
           onSetCaptain={onSetCaptain}
           onChangeSelfTeam={onChangeSelfTeam}
+          onKickParticipant={isHost ? onKickParticipant : undefined}
           allowTeamChange={lobby.allowTeamChange}
           canManage={isHost}
         />
@@ -261,6 +265,7 @@ export function LobbyView({
           currentSessionToken={currentSessionToken || undefined}
           onMoveToTeam={onMoveToTeam}
           onChangeSelfTeam={onChangeSelfTeam}
+          onKickParticipant={isHost ? onKickParticipant : undefined}
           allowTeamChange={lobby.allowTeamChange}
           canManage={isHost}
         />
@@ -274,6 +279,7 @@ export function LobbyView({
           currentSessionToken={currentSessionToken || undefined}
           onMoveToTeam={onMoveToTeam}
           onChangeSelfTeam={onChangeSelfTeam}
+          onKickParticipant={isHost ? onKickParticipant : undefined}
           allowTeamChange={lobby.allowTeamChange}
           canManage={isHost}
         />

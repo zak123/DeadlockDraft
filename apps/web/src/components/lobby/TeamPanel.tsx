@@ -13,6 +13,7 @@ interface TeamPanelProps {
   onMoveToTeam?: (participantId: string, team: Team) => void;
   onSetCaptain?: (participantId: string, isCaptain: boolean) => void;
   onChangeSelfTeam?: (team: Team) => Promise<void>;
+  onKickParticipant?: (participantId: string) => void;
   allowTeamChange?: boolean;
   canManage: boolean;
 }
@@ -51,6 +52,7 @@ export function TeamPanel({
   onMoveToTeam,
   onSetCaptain,
   onChangeSelfTeam,
+  onKickParticipant,
   allowTeamChange,
   canManage,
 }: TeamPanelProps) {
@@ -97,6 +99,11 @@ export function TeamPanel({
                     : undefined
                 }
                 onChangeSelfTeam={isCurrentUser && allowTeamChange ? onChangeSelfTeam : undefined}
+                onKick={
+                  onKickParticipant
+                    ? () => onKickParticipant(participant.id)
+                    : undefined
+                }
                 canManage={canManage}
                 showCaptainControls={showCaptainControls}
               />

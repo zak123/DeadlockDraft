@@ -317,6 +317,66 @@ export class LobbyManager {
     return toLobbyWithParticipants(updatedLobby, updatedLobby.participants, updatedLobby.host);
   }
 
+  async kickParticipant(
+    code: string,
+    hostUserId: string,
+    participantId: string
+  ): Promise<LobbyWithParticipants | null> {
+    const lobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.code, code.toUpperCase()),
+      with: {
+        host: true,
+        participants: {
+          with: { user: true },
+        },
+      },
+    });
+
+    if (!lobby) return null;
+    if (lobby.hostUserId !== hostUserId) {
+      throw new Error('Only the host can kick participants');
+    }
+
+    const participant = lobby.participants.find((p) => p.id === participantId);
+    if (!participant) {
+      throw new Error('Participant not found');
+    }
+
+    // Cannot kick the host
+    if (participant.userId === lobby.hostUserId) {
+      throw new Error('Cannot kick the host');
+    }
+
+    // If participant was captain, assign a new captain from their team
+    if (participant.isCaptain && (participant.team === 'amber' || participant.team === 'sapphire')) {
+      const remainingTeamMembers = lobby.participants.filter(
+        (p) => p.team === participant.team && p.id !== participant.id
+      );
+      if (remainingTeamMembers.length > 0) {
+        await db
+          .update(lobbyParticipants)
+          .set({ isCaptain: true })
+          .where(eq(lobbyParticipants.id, remainingTeamMembers[0].id));
+      }
+    }
+
+    await db.delete(lobbyParticipants).where(eq(lobbyParticipants.id, participant.id));
+
+    // Fetch updated state
+    const updatedLobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.id, lobby.id),
+      with: {
+        host: true,
+        participants: {
+          with: { user: true },
+        },
+      },
+    });
+
+    if (!updatedLobby) return null;
+    return toLobbyWithParticipants(updatedLobby, updatedLobby.participants, updatedLobby.host);
+  }
+
   async updateLobby(
     code: string,
     hostUserId: string,

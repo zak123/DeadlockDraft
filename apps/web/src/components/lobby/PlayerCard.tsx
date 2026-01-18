@@ -8,6 +8,7 @@ interface PlayerCardProps {
   onMoveToTeam?: (team: Team) => void;
   onSetCaptain?: (isCaptain: boolean) => void;
   onChangeSelfTeam?: (team: Team) => Promise<void>;
+  onKick?: () => void;
   canManage: boolean;
   showCaptainControls: boolean;
 }
@@ -19,6 +20,7 @@ export function PlayerCard({
   onMoveToTeam,
   onSetCaptain,
   onChangeSelfTeam,
+  onKick,
   canManage,
   showCaptainControls,
 }: PlayerCardProps) {
@@ -110,7 +112,27 @@ export function PlayerCard({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
             </button>
+            <button
+              onClick={() => onMoveToTeam('unassigned')}
+              className="p-1 hover:bg-deadlock-border rounded transition-colors"
+              title="Move to Unassigned"
+            >
+              <svg className="w-4 h-4 text-deadlock-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </button>
           </>
+        )}
+        {canManage && onKick && !isHost && (
+          <button
+            onClick={onKick}
+            className="p-1 hover:bg-red-500/20 rounded transition-colors"
+            title="Kick from Lobby"
+          >
+            <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         )}
         {!canManage && onChangeSelfTeam && (
           <>

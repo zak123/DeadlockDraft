@@ -175,6 +175,19 @@ class ApiClient {
     return result.lobby;
   }
 
+  async kickParticipant(
+    code: string,
+    participantId: string
+  ): Promise<LobbyWithParticipants> {
+    const result = await this.request<{ lobby: LobbyWithParticipants }>(
+      `/lobbies/${code}/participants/${participantId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+    return result.lobby;
+  }
+
   // Matches
   async createMatch(code: string): Promise<{ partyCode: string; lobbyId: string }> {
     return this.request(`/lobbies/${code}/match/create`, { method: 'POST' });

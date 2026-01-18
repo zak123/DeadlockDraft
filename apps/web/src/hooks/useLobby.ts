@@ -149,6 +149,19 @@ export function useLobby(code: string | null) {
     [code]
   );
 
+  const kickParticipant = useCallback(
+    async (participantId: string) => {
+      if (!code) return;
+      try {
+        const updatedLobby = await api.kickParticipant(code, participantId);
+        setLobby(updatedLobby);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to kick participant');
+      }
+    },
+    [code]
+  );
+
   const changeSelfTeam = useCallback(
     async (team: Team) => {
       if (!code) return;
@@ -208,6 +221,7 @@ export function useLobby(code: string | null) {
     sendChat,
     moveToTeam,
     setCaptain,
+    kickParticipant,
     changeSelfTeam,
     updateLobbySettings,
     createMatch,
