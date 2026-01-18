@@ -416,14 +416,18 @@ export class DraftManager {
       throw new Error('Participant not found');
     }
 
-    // Check if it's their team's turn
-    if (participant.team !== session.currentTeam) {
-      throw new Error(`It's ${session.currentTeam}'s turn to pick`);
-    }
+    // In single-player mode, any team member can pick for any team
+    // Otherwise, check if it's their team's turn and they're the captain
+    if (!config.allowSinglePlayer) {
+      // Check if it's their team's turn
+      if (participant.team !== session.currentTeam) {
+        throw new Error(`It's ${session.currentTeam}'s turn to pick`);
+      }
 
-    // Check if participant is captain (required unless single player mode)
-    if (!config.allowSinglePlayer && !participant.isCaptain) {
-      throw new Error('Only the team captain can make picks');
+      // Check if participant is captain
+      if (!participant.isCaptain) {
+        throw new Error('Only the team captain can make picks');
+      }
     }
 
     // Verify hero is available
@@ -676,6 +680,39 @@ export class DraftManager {
     wsManager.broadcastToLobby(lobbyCode, {
       type: 'draft:cancelled',
     });
+  }
+
+  async cancelDraftForDisconnect(lobbyCode: string, lobbyId: string, reason: string): Promise<void> {
+    const session = await db.query.draftSessions.findFirst({
+      where: eq(draftSessions.lobbyId, lobbyId),
+    });
+
+    if (!session || session.status !== 'active') {
+      return; // No active draft to cancel
+    }
+
+    // Clear the turn timer
+    this.clearTurnTimer(lobbyId);
+
+    // Delete all picks for this session
+    await db.delete(draftPicks).where(eq(draftPicks.draftSessionId, session.id));
+
+    // Delete the session
+    await db.delete(draftSessions).where(eq(draftSessions.id, session.id));
+
+    // Reset lobby status back to waiting
+    await db
+      .update(lobbies)
+      .set({ status: 'waiting', updatedAt: new Date().toISOString() })
+      .where(eq(lobbies.id, lobbyId));
+
+    // Broadcast draft cancellation
+    wsManager.broadcastToLobby(lobbyCode, {
+      type: 'draft:cancelled',
+    });
+
+    // Broadcast the reason to chat
+    wsManager.broadcastSystemMessage(lobbyCode, reason);
   }
 
   private async autoPickHero(

@@ -248,6 +248,33 @@ class WebSocketManager {
     // Remove from database if we have identification
     if (lobbyCode && (userId || sessionToken)) {
       try {
+        // Check if there's an active draft and if the disconnecting user is a captain
+        const lobby = await lobbyManager.getLobbyByCode(lobbyCode);
+        if (lobby) {
+          const draftSession = await draftManager.getDraftSession(lobby.id);
+
+          if (draftSession && draftSession.status === 'active') {
+            // Find the disconnecting participant
+            const participant = lobby.participants.find(p =>
+              (userId && p.userId === userId) ||
+              (sessionToken && p.sessionToken === sessionToken)
+            );
+
+            // Check if they're a captain on an actual team (not spectator/unassigned)
+            if (participant && participant.isCaptain && (participant.team === 'amber' || participant.team === 'sapphire')) {
+              const teamName = participant.team === 'amber' ? 'Amber' : 'Sapphire';
+              const playerName = participant.user?.displayName || participant.anonymousName || 'A captain';
+
+              // Cancel the draft due to captain disconnect
+              await draftManager.cancelDraftForDisconnect(
+                lobbyCode,
+                lobby.id,
+                `Draft cancelled: ${playerName} (${teamName} captain) disconnected`
+              );
+            }
+          }
+        }
+
         const updatedLobby = await lobbyManager.leaveLobby(lobbyCode, userId || undefined, sessionToken || undefined);
         if (updatedLobby) {
           // Broadcast to remaining participants
@@ -281,6 +308,33 @@ class WebSocketManager {
       this.connectedParticipants.delete(key);
 
       try {
+        // Check if there's an active draft and if the stale user is a captain
+        const lobby = await lobbyManager.getLobbyByCode(connection.lobbyCode);
+        if (lobby) {
+          const draftSession = await draftManager.getDraftSession(lobby.id);
+
+          if (draftSession && draftSession.status === 'active') {
+            // Find the stale participant
+            const participant = lobby.participants.find(p =>
+              (connection.visitorUserId && p.userId === connection.visitorUserId) ||
+              (connection.sessionToken && p.sessionToken === connection.sessionToken)
+            );
+
+            // Check if they're a captain on an actual team
+            if (participant && participant.isCaptain && (participant.team === 'amber' || participant.team === 'sapphire')) {
+              const teamName = participant.team === 'amber' ? 'Amber' : 'Sapphire';
+              const playerName = participant.user?.displayName || participant.anonymousName || 'A captain';
+
+              // Cancel the draft due to captain disconnect
+              await draftManager.cancelDraftForDisconnect(
+                connection.lobbyCode,
+                lobby.id,
+                `Draft cancelled: ${playerName} (${teamName} captain) disconnected`
+              );
+            }
+          }
+        }
+
         const updatedLobby = await lobbyManager.leaveLobby(
           connection.lobbyCode,
           connection.visitorUserId || undefined,
