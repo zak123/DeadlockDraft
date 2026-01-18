@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { DraftConfig, DraftState, UpdateDraftConfigRequest } from '@deadlock-draft/shared';
+import type { DraftConfig, UpdateDraftConfigRequest } from '@deadlock-draft/shared';
 
 interface DraftConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
   config: DraftConfig | null;
   onSave: (updates: UpdateDraftConfigRequest) => Promise<DraftConfig | undefined>;
-  onStartDraft: () => Promise<DraftState | undefined>;
 }
 
 export function DraftConfigModal({
@@ -14,14 +13,12 @@ export function DraftConfigModal({
   onClose,
   config,
   onSave,
-  onStartDraft,
 }: DraftConfigModalProps) {
   const [skipBans, setSkipBans] = useState(false);
   const [timePerTurn, setTimePerTurn] = useState(60);
   const [allowSinglePlayer, setAllowSinglePlayer] = useState(false);
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isInitialLoad = useRef(true);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,19 +70,6 @@ export function DraftConfigModal({
   }, [skipBans, timePerTurn, allowSinglePlayer, timerEnabled, autoSave, isOpen]);
 
   if (!isOpen) return null;
-
-  const handleStart = async () => {
-    setStarting(true);
-    setError(null);
-    try {
-      await onStartDraft();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start draft');
-    } finally {
-      setStarting(false);
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -204,22 +188,12 @@ export function DraftConfigModal({
           )}
         </div>
 
-        <div className="flex gap-3 mt-6">
+        <div className="flex justify-end mt-6">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-deadlock-border hover:bg-deadlock-muted/30 rounded-lg font-medium transition-colors"
+            className="px-6 py-2 bg-deadlock-border hover:bg-deadlock-muted/30 rounded-lg font-medium transition-colors"
           >
             Close
-          </button>
-          <button
-            onClick={handleStart}
-            disabled={starting || saving}
-            className="flex-1 px-4 py-2 bg-amber hover:bg-amber/80 text-black rounded-lg font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {(starting || saving) && (
-              <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-            )}
-            {starting ? 'Starting...' : saving ? 'Saving...' : 'Start Draft'}
           </button>
         </div>
       </div>

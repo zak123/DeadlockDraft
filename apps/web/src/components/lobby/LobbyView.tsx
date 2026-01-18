@@ -68,8 +68,15 @@ export function LobbyView({
   }, [lobby.participants]);
 
   const handleStartDraft = async () => {
-    setStartingDraft(true);
     setDraftError(null);
+
+    // Check if all players are ready
+    if (!readyStatus.allReady) {
+      setDraftError(`Not all players are ready (${readyStatus.readyCount}/${readyStatus.totalCount} ready)`);
+      return;
+    }
+
+    setStartingDraft(true);
     try {
       await onStartDraft();
     } catch (err) {
@@ -234,18 +241,13 @@ export function LobbyView({
                 >
                   Configure Draft
                 </Button>
-                <span
-                  title={!readyStatus.allReady ? `${readyStatus.readyCount}/${readyStatus.totalCount} players ready` : undefined}
-                  className="inline-block"
+                <button
+                  onClick={handleStartDraft}
+                  disabled={startingDraft}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50"
                 >
-                  <button
-                    onClick={handleStartDraft}
-                    disabled={startingDraft || !readyStatus.allReady}
-                    className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {startingDraft ? 'Starting...' : 'Start Draft'}
-                  </button>
-                </span>
+                  {startingDraft ? 'Starting...' : 'Start Draft'}
+                </button>
               </div>
               {draftError && (
                 <div className="text-red-400 text-sm">{draftError}</div>
@@ -266,7 +268,6 @@ export function LobbyView({
         onClose={() => setShowDraftConfig(false)}
         config={draftConfig}
         onSave={onUpdateDraftConfig}
-        onStartDraft={onStartDraft}
       />
     </div>
   );
