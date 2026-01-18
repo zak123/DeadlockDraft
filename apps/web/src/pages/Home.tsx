@@ -19,12 +19,25 @@ export function Home() {
   const [error, setError] = useState('');
   const [publicLobbies, setPublicLobbies] = useState<LobbyWithParticipants[]>([]);
   const [loadingLobbies, setLoadingLobbies] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const LOBBIES_PER_PAGE = 5;
+  const totalPages = Math.ceil(publicLobbies.length / LOBBIES_PER_PAGE);
+  const paginatedLobbies = publicLobbies.slice(
+    currentPage * LOBBIES_PER_PAGE,
+    (currentPage + 1) * LOBBIES_PER_PAGE
+  );
 
   useEffect(() => {
     const fetchPublicLobbies = async () => {
       try {
         const lobbies = await api.getPublicLobbies();
         setPublicLobbies(lobbies);
+        // Reset to first page if current page would be out of bounds
+        setCurrentPage((prev) => {
+          const maxPage = Math.max(0, Math.ceil(lobbies.length / LOBBIES_PER_PAGE) - 1);
+          return prev > maxPage ? maxPage : prev;
+        });
       } catch (err) {
         console.error('Failed to fetch public lobbies:', err);
       } finally {
@@ -153,7 +166,7 @@ export function Home() {
               </p>
             ) : (
               <div className="space-y-3">
-                {publicLobbies.map((lobby) => (
+                {paginatedLobbies.map((lobby) => (
                   <div
                     key={lobby.id}
                     className="flex items-center justify-between p-3 bg-deadlock-bg rounded-lg hover:bg-deadlock-border transition-colors"
@@ -172,6 +185,31 @@ export function Home() {
                     </Button>
                   </div>
                 ))}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 pt-2">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                      disabled={currentPage === 0}
+                      className="p-1 rounded hover:bg-deadlock-border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <span className="text-sm text-deadlock-muted">
+                      {currentPage + 1} / {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={currentPage === totalPages - 1}
+                      className="p-1 rounded hover:bg-deadlock-border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
