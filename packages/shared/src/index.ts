@@ -149,7 +149,6 @@ export interface SetCaptainRequest {
 
 // Twitch lobby types
 export interface CreateTwitchLobbyRequest {
-  name?: string;
   matchConfig?: Partial<MatchConfig>;
   maxPlayers?: number;
 }

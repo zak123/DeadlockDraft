@@ -666,7 +666,6 @@ export class LobbyManager {
 
   async createTwitchLobby(
     hostUser: User,
-    name: string | undefined,
     matchConfig?: Partial<MatchConfig>,
     maxPlayers?: number
   ): Promise<LobbyWithParticipants> {
@@ -678,7 +677,8 @@ export class LobbyManager {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + this.config.LOBBY_EXPIRY_HOURS);
 
-    const lobbyName = name || `${hostUser.twitchDisplayName || hostUser.displayName}'s Twitch Lobby`;
+    // Auto-generate name like public lobbies
+    const lobbyName = `${hostUser.twitchDisplayName || hostUser.displayName}'s Lobby ${code}`;
     const twitchStreamUrl = `https://twitch.tv/${hostUser.twitchUsername}`;
 
     const [lobby] = await db

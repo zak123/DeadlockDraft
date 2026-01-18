@@ -77,6 +77,58 @@ lobbies.get('/public', async (c) => {
   return c.json({ lobbies: publicLobbies });
 });
 
+// Get Twitch lobbies (must be before /:code route)
+lobbies.get('/twitch', async (c) => {
+  const page = parseInt(c.req.query('page') || '1', 10);
+  const pageSize = parseInt(c.req.query('pageSize') || '5', 10);
+
+  const result = await lobbyManager.getTwitchLobbies(page, pageSize);
+
+  return c.json<GetTwitchLobbiesResponse>({
+    lobbies: result.lobbies,
+    totalCount: result.totalCount,
+    page,
+    pageSize,
+  });
+});
+
+// Create Twitch lobby (must be before /:code route)
+lobbies.post('/twitch', requireAuth, async (c) => {
+  const user = getAuthUser(c);
+  const body = await c.req.json<CreateTwitchLobbyRequest>().catch(() => ({}));
+
+  const createTwitchLobbySchema = z.object({
+    matchConfig: z
+      .object({
+        gameMode: z.string().optional(),
+        mapName: z.string().optional(),
+        teamSize: z.number().min(1).max(6).optional(),
+        allowSpectators: z.boolean().optional(),
+        maxRounds: z.number().min(1).optional(),
+        roundTime: z.number().min(60).optional(),
+      })
+      .optional(),
+    maxPlayers: z.number().min(2).max(24).optional(),
+  });
+
+  const validated = createTwitchLobbySchema.parse(body);
+
+  try {
+    const lobby = await lobbyManager.createTwitchLobby(
+      user,
+      validated.matchConfig,
+      validated.maxPlayers
+    );
+
+    return c.json<CreateTwitchLobbyResponse>({ lobby }, 201);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new HTTPException(400, { message: error.message });
+    }
+    throw error;
+  }
+});
+
 // Create lobby (requires auth)
 lobbies.post('/', requireAuth, async (c) => {
   const user = getAuthUser(c);
@@ -316,23 +368,8 @@ lobbies.patch('/:code/participants/:participantId/captain', requireAuth, async (
 });
 
 // ===============================
-// Twitch Lobby Endpoints
+// Twitch Lobby Endpoints (with :code param)
 // ===============================
-
-const createTwitchLobbySchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  matchConfig: z
-    .object({
-      gameMode: z.string().optional(),
-      mapName: z.string().optional(),
-      teamSize: z.number().min(1).max(6).optional(),
-      allowSpectators: z.boolean().optional(),
-      maxRounds: z.number().min(1).optional(),
-      roundTime: z.number().min(60).optional(),
-    })
-    .optional(),
-  maxPlayers: z.number().min(2).max(24).optional(),
-});
 
 const toggleAcceptingSchema = z.object({
   accepting: z.boolean(),
@@ -344,44 +381,6 @@ const promoteFromWaitlistSchema = z.object({
 
 const fillFromWaitlistSchema = z.object({
   count: z.number().min(1).max(24),
-});
-
-// Get Twitch lobbies
-lobbies.get('/twitch', async (c) => {
-  const page = parseInt(c.req.query('page') || '1', 10);
-  const pageSize = parseInt(c.req.query('pageSize') || '5', 10);
-
-  const result = await lobbyManager.getTwitchLobbies(page, pageSize);
-
-  return c.json<GetTwitchLobbiesResponse>({
-    lobbies: result.lobbies,
-    totalCount: result.totalCount,
-    page,
-    pageSize,
-  });
-});
-
-// Create Twitch lobby (requires auth + Twitch linked)
-lobbies.post('/twitch', requireAuth, async (c) => {
-  const user = getAuthUser(c);
-  const body = await c.req.json<CreateTwitchLobbyRequest>().catch(() => ({}));
-  const validated = createTwitchLobbySchema.parse(body);
-
-  try {
-    const lobby = await lobbyManager.createTwitchLobby(
-      user,
-      validated.name,
-      validated.matchConfig,
-      validated.maxPlayers
-    );
-
-    return c.json<CreateTwitchLobbyResponse>({ lobby }, 201);
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new HTTPException(400, { message: error.message });
-    }
-    throw error;
-  }
 });
 
 // Toggle accepting players (host only)

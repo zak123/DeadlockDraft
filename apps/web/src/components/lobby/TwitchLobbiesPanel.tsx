@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
+import { formatTimeAgo } from '../../utils/time';
 import type { TwitchLobbyWithWaitlist } from '@deadlock-draft/shared';
 
 const PAGE_SIZE = 5;
@@ -159,8 +160,10 @@ function TwitchLobbyCard({ lobby, onJoinQueue }: TwitchLobbyCardProps) {
                 {lobby.waitlistCount} in queue
               </span>
             )}
-            {isCompleted && (
+            {isCompleted ? (
               <span className="text-yellow-400">Draft Completed</span>
+            ) : (
+              <span>{formatTimeAgo(lobby.createdAt)}</span>
             )}
           </div>
         </div>

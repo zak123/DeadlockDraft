@@ -24,10 +24,9 @@ export function TwitchLoginButton({ returnTo, variant = 'link', onUnlink }: Twit
     return (
       <button
         onClick={handleClick}
-        className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+        className="text-sm text-gray-400 hover:text-white transition-colors"
       >
-        <TwitchIcon />
-        <span>Unlink Twitch</span>
+        Sign out
       </button>
     );
   }
