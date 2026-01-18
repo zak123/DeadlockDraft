@@ -1,22 +1,59 @@
 import { getConfig } from '../config/env';
 import type { DeadlockCreateMatchResponse, DeadlockMatchIdResponse, MatchConfig } from '@deadlock-draft/shared';
 
-const DEADLOCK_API_URL = 'https://api.deadlock-api.com';
+// Response from the party API
+interface CreatePartyResult {
+  success: boolean;
+  bot_id: string;
+  party_info?: {
+    party_id: number;
+    member_count: number;
+    is_private_lobby: boolean;
+    join_code: string | null;
+    join_code_numeric: number | null;
+    members: Array<{
+      account_id: number;
+      name: string;
+      is_ready: boolean;
+      player_type: number;
+      team: number;
+    }>;
+  } | null;
+  error?: string | null;
+}
 
 export class DeadlockApiClient {
   private config = getConfig();
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    usePartyApi = false
   ): Promise<T> {
-    const url = `${DEADLOCK_API_URL}${endpoint}`;
+    // Use party API URL for party endpoints, fallback to old API for match endpoints
+    const baseUrl = usePartyApi
+      ? this.config.DEADLOCK_API_URL
+      : 'https://api.deadlock-api.com';
+
+    if (usePartyApi && !this.config.DEADLOCK_API_URL) {
+      throw new Error('DEADLOCK_API_URL is not configured');
+    }
+
+    const url = `${baseUrl}${endpoint}`;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Only add auth header for old API
+    if (!usePartyApi && this.config.DEADLOCK_API_KEY) {
+      headers['Authorization'] = `Bearer ${this.config.DEADLOCK_API_KEY}`;
+    }
 
     const response = await fetch(url, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.config.DEADLOCK_API_KEY}`,
+        ...headers,
         ...options.headers,
       },
     });
@@ -27,6 +64,31 @@ export class DeadlockApiClient {
     }
 
     return response.json() as Promise<T>;
+  }
+
+  /**
+   * Create a party using the Deadlock Party API.
+   * Returns the join code that players need to enter in-game.
+   */
+  async createParty(): Promise<{ joinCode: string; botId: string }> {
+    const result = await this.request<CreatePartyResult>(
+      '/party/create',
+      { method: 'POST' },
+      true
+    );
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to create party');
+    }
+
+    if (!result.party_info?.join_code) {
+      throw new Error('Party created but no join code received');
+    }
+
+    return {
+      joinCode: result.party_info.join_code,
+      botId: result.bot_id,
+    };
   }
 
   async createCustomMatch(matchConfig: MatchConfig): Promise<DeadlockCreateMatchResponse> {

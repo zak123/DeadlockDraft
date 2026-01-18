@@ -8,6 +8,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().default('./data/deadlock-draft.db'),
   STEAM_API_KEY: z.string().min(1, 'STEAM_API_KEY is required'),
   DEADLOCK_API_KEY: z.string().optional().default(''),
+  DEADLOCK_API_URL: z.string().optional().default(''),
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
   LOBBY_EXPIRY_HOURS: z.string().default('2').transform(Number),
   // Twitch OAuth

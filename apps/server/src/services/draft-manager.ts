@@ -11,6 +11,7 @@ import type {
 } from '@deadlock-draft/shared';
 import type { DraftConfig, DraftSession, DraftPick, LobbyParticipant } from '../db/schema';
 import { wsManager } from './websocket';
+import { deadlockApiClient } from './deadlock-api';
 
 // All available heroes
 const HEROES = [
@@ -531,6 +532,10 @@ export class DraftManager {
             draftState,
           });
         }
+
+        // Create party via Deadlock API
+        this.createPartyForLobby(lobbyId, lobbyCode);
+
         return;
       }
     }
@@ -717,6 +722,44 @@ export class DraftManager {
 
     // Broadcast the reason to chat
     wsManager.broadcastSystemMessage(lobbyCode, reason);
+  }
+
+  /**
+   * Create a party via the Deadlock API after draft completes.
+   * This runs asynchronously and broadcasts the party code when ready.
+   */
+  private async createPartyForLobby(lobbyId: string, lobbyCode: string): Promise<void> {
+    try {
+      const { joinCode, botId } = await deadlockApiClient.createParty();
+
+      // Store the party code in the lobby
+      await db
+        .update(lobbies)
+        .set({
+          deadlockPartyCode: joinCode,
+          deadlockLobbyId: botId,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(lobbies.id, lobbyId));
+
+      // Broadcast party created to all clients
+      wsManager.broadcastToLobby(lobbyCode, {
+        type: 'draft:party-created',
+        partyCode: joinCode,
+      });
+
+      // Also send a system message
+      wsManager.broadcastSystemMessage(
+        lobbyCode,
+        `Party created! Enter code ${joinCode} in Deadlock to join.`
+      );
+    } catch (error) {
+      console.error('Failed to create Deadlock party:', error);
+      wsManager.broadcastSystemMessage(
+        lobbyCode,
+        'Failed to create Deadlock party. You can manually create a party in-game.'
+      );
+    }
   }
 
   private async autoPickHero(

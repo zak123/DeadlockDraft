@@ -214,6 +214,7 @@ export type WSServerMessage =
   | { type: 'draft:completed'; draftState: DraftState }
   | { type: 'draft:timeout'; autoPick: DraftPick; draftState: DraftState }
   | { type: 'draft:cancelled' }
+  | { type: 'draft:party-created'; partyCode: string }
   // Waitlist events
   | { type: 'waitlist:updated'; waitlist: WaitlistEntry[] }
   | { type: 'waitlist:joined'; entry: WaitlistEntry }

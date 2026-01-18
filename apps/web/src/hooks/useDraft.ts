@@ -12,6 +12,7 @@ export function useDraft(lobbyCode: string | null) {
   const [draftState, setDraftState] = useState<DraftState | null>(null);
   const [draftConfig, setDraftConfig] = useState<DraftConfig | null>(null);
   const [heroes, setHeroes] = useState<string[]>([]);
+  const [partyCode, setPartyCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -43,6 +44,10 @@ export function useDraft(lobbyCode: string | null) {
           break;
         case 'draft:cancelled':
           setDraftState(null);
+          setPartyCode(null);
+          break;
+        case 'draft:party-created':
+          setPartyCode(message.partyCode);
           break;
       }
     };
@@ -178,6 +183,7 @@ export function useDraft(lobbyCode: string | null) {
     draftState,
     draftConfig,
     heroes,
+    partyCode,
     loading,
     error,
     updateConfig,

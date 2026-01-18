@@ -43,6 +43,7 @@ export function Lobby() {
     draftState,
     draftConfig,
     heroes,
+    partyCode,
     updateConfig,
     startDraft,
     makePick,
@@ -361,6 +362,7 @@ export function Lobby() {
                 isHost={isHost}
                 onCancelDraft={cancelDraft}
                 onCreateMatch={createMatch}
+                partyCode={partyCode}
               />
               <LobbyChat
                 currentUserId={user?.id}
