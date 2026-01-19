@@ -1,4 +1,4 @@
-import { db, lobbies, lobbyParticipants, siteStats } from '../db';
+import { db, lobbies, lobbyParticipants, siteStats, draftSessions, draftConfigs } from '../db';
 import { eq, and, or, lt, sql } from 'drizzle-orm';
 import { nanoid, customAlphabet } from 'nanoid';
 import { getConfig } from '../config/env';
@@ -193,6 +193,12 @@ export class LobbyManager {
         selectedHeroId: null,
       })
       .where(eq(lobbyParticipants.lobbyId, lobby.id));
+
+    // Delete draft session (picks are cascade deleted)
+    await db.delete(draftSessions).where(eq(draftSessions.lobbyId, lobby.id));
+
+    // Delete draft config
+    await db.delete(draftConfigs).where(eq(draftConfigs.lobbyId, lobby.id));
 
     return this.getLobbyByCode(code);
   }

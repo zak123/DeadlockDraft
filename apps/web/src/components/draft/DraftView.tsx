@@ -354,6 +354,9 @@ export function DraftView({
         {isHost && onPlayAgain && (
           <button
             onClick={async () => {
+              if (!confirm('Are you sure you want to play again? This will clear the current draft and reset everyone to the lobby.')) {
+                return;
+              }
               setIsPlayingAgain(true);
               try {
                 await onPlayAgain();

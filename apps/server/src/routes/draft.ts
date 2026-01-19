@@ -228,6 +228,11 @@ draft.post('/:code/reset', requireAuth, async (c) => {
     throw new HTTPException(500, { message: 'Failed to reset lobby' });
   }
 
+  // Clear the draft state on all clients
+  wsManager.broadcastToLobby(code, {
+    type: 'draft:cancelled',
+  });
+
   // Broadcast the updated lobby to all clients
   wsManager.broadcastToLobby(code, {
     type: 'lobby:update',
