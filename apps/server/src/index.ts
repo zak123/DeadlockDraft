@@ -11,7 +11,7 @@ import { matches } from './routes/matches';
 import { draft } from './routes/draft';
 import { websocketHandlers } from './services/websocket';
 import { lobbyManager } from './services/lobby-manager';
-import { db, sessions, siteStats, lobbies } from './db';
+import { db, sessions, siteStats, lobbies as lobbiesTable } from './db';
 import { eq, and, gt, sql } from 'drizzle-orm';
 
 const config = getConfig();
@@ -20,7 +20,7 @@ const config = getConfig();
 async function initializeSiteStats() {
   const existing = await db.query.siteStats.findFirst();
   if (!existing) {
-    const [{ count }] = await db.select({ count: sql<number>`COUNT(*)` }).from(lobbies);
+    const [{ count }] = await db.select({ count: sql<number>`COUNT(*)` }).from(lobbiesTable);
     await db.insert(siteStats).values({ id: 1, totalLobbiesCreated: count });
     console.log(`Initialized site stats with ${count} existing lobbies`);
   }
