@@ -75,11 +75,16 @@ const setCaptainSchema = z.object({
 
 // Get lobby stats
 lobbies.get('/stats', async (c) => {
-  const [active, total] = await Promise.all([
-    lobbyManager.getTotalActiveLobbyCount(),
-    lobbyManager.getTotalLobbiesCreated(),
-  ]);
-  return c.json({ active, total });
+  try {
+    const [active, total] = await Promise.all([
+      lobbyManager.getTotalActiveLobbyCount(),
+      lobbyManager.getTotalLobbiesCreated(),
+    ]);
+    return c.json({ active, total });
+  } catch (error) {
+    console.error('Error fetching lobby stats:', error);
+    return c.json({ active: 0, total: 0 });
+  }
 });
 
 // Get public lobbies
