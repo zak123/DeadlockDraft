@@ -16,6 +16,7 @@ interface DraftViewProps {
   onCancelDraft: () => Promise<void>;
   onSetPartyCode: (partyCode: string) => Promise<void>;
   partyCode: string | null;
+  onPlayAgain?: () => Promise<void>;
 }
 
 export function DraftView({
@@ -29,11 +30,13 @@ export function DraftView({
   onCancelDraft,
   onSetPartyCode,
   partyCode,
+  onPlayAgain,
 }: DraftViewProps) {
   const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isPlayingAgain, setIsPlayingAgain] = useState(false);
   const [showPartyCodeCopied, setShowPartyCodeCopied] = useState(false);
   const [showPartyCode, setShowPartyCode] = useState(false);
   const [manualPartyCode, setManualPartyCode] = useState('');
@@ -293,13 +296,20 @@ export function DraftView({
             </p>
           </div>
         ) : isHost ? (
-          <div className="bg-amber/10 border border-amber/30 rounded-xl p-6 max-w-lg w-full">
-            <h3 className="text-lg font-bold text-amber mb-3">Create Party Manually</h3>
-            <div className="text-left text-sm text-deadlock-muted space-y-2 mb-4">
+          <div className="bg-amber/10 border-2 border-amber/50 rounded-xl p-6 max-w-lg w-full">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-3 h-3 bg-amber rounded-full animate-pulse"></div>
+              <h3 className="text-xl font-bold text-amber animate-pulse">Action Required</h3>
+              <div className="w-3 h-3 bg-amber rounded-full animate-pulse"></div>
+            </div>
+            <p className="text-center text-amber/90 mb-4">
+              Your lobby is waiting! Create the party in Deadlock and share the code.
+            </p>
+            <div className="text-left text-sm text-deadlock-muted space-y-2 mb-4 bg-deadlock-bg/50 rounded-lg p-3">
               <p>1. Open <span className="text-white font-medium">Deadlock</span></p>
               <p>2. Go to <span className="text-white font-medium">Play → Custom → Create Party</span></p>
               <p>3. Copy the party code shown in Deadlock</p>
-              <p>4. Paste it below to share with your team</p>
+              <p>4. Paste it below to share with the lobby</p>
             </div>
 
             <div className="flex gap-2">
@@ -308,7 +318,7 @@ export function DraftView({
                 value={manualPartyCode}
                 onChange={(e) => setManualPartyCode(e.target.value.toUpperCase())}
                 placeholder="Enter party code (e.g. LGDC5)"
-                className="flex-1 px-4 py-2 bg-deadlock-bg border border-deadlock-border rounded-lg text-white font-mono text-lg tracking-wider placeholder:text-deadlock-muted placeholder:font-sans placeholder:text-sm focus:outline-none focus:border-amber"
+                className="flex-1 px-4 py-2 bg-deadlock-bg border-2 border-amber/50 rounded-lg text-white font-mono text-lg tracking-wider placeholder:text-deadlock-muted placeholder:font-sans placeholder:text-sm focus:outline-none focus:border-amber"
                 maxLength={10}
               />
               <button
@@ -324,15 +334,38 @@ export function DraftView({
             )}
           </div>
         ) : (
-          <div className="bg-deadlock-card border border-deadlock-border rounded-xl p-6 text-center max-w-md w-full">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-amber border-t-transparent"></div>
-              <span className="text-deadlock-muted">Waiting for host...</span>
+          <div className="bg-amber/10 border border-amber/30 rounded-xl p-6 text-center max-w-md w-full">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-amber border-t-transparent"></div>
+              <span className="text-xl font-bold text-amber animate-pulse">
+                Waiting for Host
+              </span>
             </div>
-            <p className="text-deadlock-muted text-sm">
-              The host is creating the party. The code will appear here shortly.
+            <p className="text-amber/80">
+              The host needs to create the party in Deadlock and share the code.
+            </p>
+            <p className="text-deadlock-muted text-sm mt-2">
+              The party code will appear here once shared.
             </p>
           </div>
+        )}
+
+        {/* Play Again Button for Host */}
+        {isHost && onPlayAgain && (
+          <button
+            onClick={async () => {
+              setIsPlayingAgain(true);
+              try {
+                await onPlayAgain();
+              } finally {
+                setIsPlayingAgain(false);
+              }
+            }}
+            disabled={isPlayingAgain}
+            className="px-6 py-3 bg-amber hover:bg-amber/80 text-black rounded-lg font-bold transition-colors disabled:opacity-50"
+          >
+            {isPlayingAgain ? 'Resetting...' : 'Play Again?'}
+          </button>
         )}
 
         {/* Hero Selection Instruction */}

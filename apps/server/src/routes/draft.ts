@@ -202,4 +202,41 @@ draft.post('/:code/draft/party-code', requireAuth, async (c) => {
   return c.json({ success: true, partyCode: validated.partyCode });
 });
 
+// Reset lobby for play again (host only)
+draft.post('/:code/reset', requireAuth, async (c) => {
+  const code = c.req.param('code');
+  const user = getAuthUser(c);
+
+  const lobby = await lobbyManager.getLobbyByCode(code);
+
+  if (!lobby) {
+    throw new HTTPException(404, { message: 'Lobby not found' });
+  }
+
+  if (lobby.hostUserId !== user.id) {
+    throw new HTTPException(403, { message: 'Only the host can reset the lobby' });
+  }
+
+  if (lobby.status !== 'completed') {
+    throw new HTTPException(400, { message: 'Can only reset a completed lobby' });
+  }
+
+  // Reset the lobby
+  const updatedLobby = await lobbyManager.resetLobby(code);
+
+  if (!updatedLobby) {
+    throw new HTTPException(500, { message: 'Failed to reset lobby' });
+  }
+
+  // Broadcast the updated lobby to all clients
+  wsManager.broadcastToLobby(code, {
+    type: 'lobby:update',
+    lobby: updatedLobby,
+  });
+
+  wsManager.broadcastSystemMessage(code, 'Lobby has been reset. Ready for another game!');
+
+  return c.json({ success: true, lobby: updatedLobby });
+});
+
 export { draft };

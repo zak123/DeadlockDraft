@@ -155,6 +155,43 @@ export class LobbyManager {
     return this.getLobbyByCode(code);
   }
 
+  async resetLobby(code: string): Promise<LobbyWithParticipants | null> {
+    const lobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.code, code.toUpperCase()),
+      with: {
+        participants: true,
+      },
+    });
+
+    if (!lobby) return null;
+
+    // Reset lobby to waiting state
+    await db
+      .update(lobbies)
+      .set({
+        status: 'waiting',
+        deadlockPartyCode: null,
+        deadlockLobbyId: null,
+        deadlockMatchId: null,
+        draftCompletedAt: null,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(lobbies.id, lobby.id));
+
+    // Reset all participants to unassigned and clear their selected heroes
+    await db
+      .update(lobbyParticipants)
+      .set({
+        team: 'unassigned',
+        isReady: false,
+        isCaptain: false,
+        selectedHeroId: null,
+      })
+      .where(eq(lobbyParticipants.lobbyId, lobby.id));
+
+    return this.getLobbyByCode(code);
+  }
+
   async joinLobby(
     code: string,
     user?: User,

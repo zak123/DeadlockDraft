@@ -289,6 +289,10 @@ export function Lobby() {
     await api.setPartyCode(code!, partyCode);
   };
 
+  const handlePlayAgain = async () => {
+    await api.resetLobby(code!);
+  };
+
   const handleSelectHero = async (heroId: string) => {
     await api.selectHero(code!, heroId);
   };
@@ -372,6 +376,7 @@ export function Lobby() {
                 onCancelDraft={cancelDraft}
                 onSetPartyCode={handleSetPartyCode}
                 partyCode={partyCode || lobby.deadlockPartyCode}
+                onPlayAgain={handlePlayAgain}
               />
               <LobbyChat
                 currentUserId={user?.id}

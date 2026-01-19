@@ -266,6 +266,13 @@ class ApiClient {
     });
   }
 
+  async resetLobby(code: string): Promise<LobbyWithParticipants> {
+    const result = await this.request<{ lobby: LobbyWithParticipants }>(`/lobbies/${code}/reset`, {
+      method: 'POST',
+    });
+    return result.lobby;
+  }
+
   // Twitch Auth
   getTwitchLoginUrl(returnTo?: string): string {
     const params = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
