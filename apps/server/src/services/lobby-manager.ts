@@ -165,6 +165,10 @@ export class LobbyManager {
 
     if (!lobby) return null;
 
+    // Extend expiration time
+    const newExpiresAt = new Date();
+    newExpiresAt.setHours(newExpiresAt.getHours() + this.config.LOBBY_EXPIRY_HOURS);
+
     // Reset lobby to waiting state
     await db
       .update(lobbies)
@@ -174,6 +178,7 @@ export class LobbyManager {
         deadlockLobbyId: null,
         deadlockMatchId: null,
         draftCompletedAt: null,
+        expiresAt: newExpiresAt.toISOString(),
         updatedAt: new Date().toISOString(),
       })
       .where(eq(lobbies.id, lobby.id));
