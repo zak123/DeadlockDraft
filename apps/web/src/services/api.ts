@@ -77,6 +77,11 @@ class ApiClient {
   }
 
   // Lobbies
+  async getLobbyCount(): Promise<number> {
+    const result = await this.request<{ count: number }>('/lobbies/count');
+    return result.count;
+  }
+
   async getPublicLobbies(page: number = 1, pageSize: number = 5): Promise<{
     lobbies: LobbyWithParticipants[];
     totalCount: number;

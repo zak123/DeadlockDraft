@@ -1,5 +1,5 @@
 import { db, lobbies, lobbyParticipants } from '../db';
-import { eq, and, lt, sql } from 'drizzle-orm';
+import { eq, and, or, lt, sql } from 'drizzle-orm';
 import { nanoid, customAlphabet } from 'nanoid';
 import { getConfig } from '../config/env';
 import { DEFAULT_MATCH_CONFIG, LOBBY_CODE_LENGTH, DEFAULT_MAX_PLAYERS, MAX_SPECTATORS } from '../config/match-defaults';
@@ -1067,6 +1067,17 @@ export class LobbyManager {
       participantId: participant.id,
       heroId,
     };
+  }
+
+  async getTotalActiveLobbyCount(): Promise<number> {
+    const result = await db.query.lobbies.findMany({
+      where: or(
+        eq(lobbies.status, 'waiting'),
+        eq(lobbies.status, 'in_progress')
+      ),
+      columns: { id: true },
+    });
+    return result.length;
   }
 }
 

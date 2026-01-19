@@ -37,6 +37,7 @@ export function Home() {
   const [totalCount, setTotalCount] = useState(0);
   const [loadingLobbies, setLoadingLobbies] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalLobbyCount, setTotalLobbyCount] = useState<number | null>(null);
 
   const hasTwitchLinked = !!user?.twitchId;
 
@@ -54,6 +55,22 @@ export function Home() {
 
   const PAGE_SIZE = 5;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  // Fetch total lobby count
+  useEffect(() => {
+    const fetchLobbyCount = async () => {
+      try {
+        const count = await api.getLobbyCount();
+        setTotalLobbyCount(count);
+      } catch (err) {
+        console.error('Failed to fetch lobby count:', err);
+      }
+    };
+
+    fetchLobbyCount();
+    const interval = setInterval(fetchLobbyCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchPublicLobbies = async (showLoading = false) => {
@@ -222,7 +239,14 @@ export function Home() {
 
           {/* Create Lobby */}
           <div className="card p-6">
-            <h3 className="text-lg font-semibold mb-4">Create a Lobby</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Create a Lobby</h3>
+              {totalLobbyCount !== null && (
+                <span className="text-sm text-deadlock-muted">
+                  <span className="text-amber font-medium">{totalLobbyCount}</span> active {totalLobbyCount === 1 ? 'lobby' : 'lobbies'}
+                </span>
+              )}
+            </div>
             {user ? (
               <div className="space-y-3">
                 <Button onClick={() => setShowCreateModal(true)} className="w-full">
