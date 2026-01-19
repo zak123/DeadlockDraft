@@ -1089,10 +1089,11 @@ export class LobbyManager {
   }
 
   private async incrementLobbyCount(): Promise<void> {
-    await db
-      .update(siteStats)
-      .set({ totalLobbiesCreated: sql`${siteStats.totalLobbiesCreated} + 1` })
-      .where(eq(siteStats.id, 1));
+    // Upsert: insert if not exists, otherwise increment
+    await db.run(sql`
+      INSERT INTO site_stats (id, total_lobbies_created) VALUES (1, 1)
+      ON CONFLICT(id) DO UPDATE SET total_lobbies_created = total_lobbies_created + 1
+    `);
   }
 }
 

@@ -11,10 +11,21 @@ import { matches } from './routes/matches';
 import { draft } from './routes/draft';
 import { websocketHandlers } from './services/websocket';
 import { lobbyManager } from './services/lobby-manager';
-import { db, sessions } from './db';
-import { eq, and, gt } from 'drizzle-orm';
+import { db, sessions, siteStats, lobbies } from './db';
+import { eq, and, gt, sql } from 'drizzle-orm';
 
 const config = getConfig();
+
+// Initialize site stats if not exists
+async function initializeSiteStats() {
+  const existing = await db.query.siteStats.findFirst();
+  if (!existing) {
+    const [{ count }] = await db.select({ count: sql<number>`COUNT(*)` }).from(lobbies);
+    await db.insert(siteStats).values({ id: 1, totalLobbiesCreated: count });
+    console.log(`Initialized site stats with ${count} existing lobbies`);
+  }
+}
+initializeSiteStats().catch(console.error);
 
 const app = new Hono();
 

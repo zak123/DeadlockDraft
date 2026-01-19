@@ -404,7 +404,7 @@ export function Home() {
           </div>
           {lobbyStats !== null && (
             <p className="mt-3 text-deadlock-muted">
-              <span className="text-amber font-medium">{lobbyStats.total.toLocaleString()}</span> lobbies created
+              <span className="text-amber font-medium">{lobbyStats.total.toLocaleString()}</span> games played
             </p>
           )}
         </div>
