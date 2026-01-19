@@ -150,6 +150,12 @@ export const draftPicks = sqliteTable('draft_picks', {
   heroIdIdx: index('draft_picks_hero_id_idx').on(table.heroId),
 }));
 
+// Site stats table (single row for global counters)
+export const siteStats = sqliteTable('site_stats', {
+  id: integer('id').primaryKey().default(1),
+  totalLobbiesCreated: integer('total_lobbies_created').notNull().default(0),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
@@ -242,3 +248,4 @@ export type DraftSession = typeof draftSessions.$inferSelect;
 export type NewDraftSession = typeof draftSessions.$inferInsert;
 export type DraftPick = typeof draftPicks.$inferSelect;
 export type NewDraftPick = typeof draftPicks.$inferInsert;
+export type SiteStats = typeof siteStats.$inferSelect;

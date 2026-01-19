@@ -73,10 +73,13 @@ const setCaptainSchema = z.object({
   isCaptain: z.boolean(),
 });
 
-// Get total active lobby count
-lobbies.get('/count', async (c) => {
-  const count = await lobbyManager.getTotalActiveLobbyCount();
-  return c.json({ count });
+// Get lobby stats
+lobbies.get('/stats', async (c) => {
+  const [active, total] = await Promise.all([
+    lobbyManager.getTotalActiveLobbyCount(),
+    lobbyManager.getTotalLobbiesCreated(),
+  ]);
+  return c.json({ active, total });
 });
 
 // Get public lobbies

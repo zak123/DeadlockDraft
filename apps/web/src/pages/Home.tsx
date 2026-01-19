@@ -37,7 +37,7 @@ export function Home() {
   const [totalCount, setTotalCount] = useState(0);
   const [loadingLobbies, setLoadingLobbies] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalLobbyCount, setTotalLobbyCount] = useState<number | null>(null);
+  const [lobbyStats, setLobbyStats] = useState<{ active: number; total: number } | null>(null);
 
   const hasTwitchLinked = !!user?.twitchId;
 
@@ -56,19 +56,19 @@ export function Home() {
   const PAGE_SIZE = 5;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  // Fetch total lobby count
+  // Fetch lobby stats
   useEffect(() => {
-    const fetchLobbyCount = async () => {
+    const fetchLobbyStats = async () => {
       try {
-        const count = await api.getLobbyCount();
-        setTotalLobbyCount(count);
+        const stats = await api.getLobbyStats();
+        setLobbyStats(stats);
       } catch (err) {
-        console.error('Failed to fetch lobby count:', err);
+        console.error('Failed to fetch lobby stats:', err);
       }
     };
 
-    fetchLobbyCount();
-    const interval = setInterval(fetchLobbyCount, 30000);
+    fetchLobbyStats();
+    const interval = setInterval(fetchLobbyStats, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -241,9 +241,9 @@ export function Home() {
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Create a Lobby</h3>
-              {totalLobbyCount !== null && (
+              {lobbyStats !== null && (
                 <span className="text-sm text-deadlock-muted">
-                  <span className="text-amber font-medium">{totalLobbyCount}</span> active {totalLobbyCount === 1 ? 'lobby' : 'lobbies'}
+                  <span className="text-amber font-medium">{lobbyStats.active}</span> active {lobbyStats.active === 1 ? 'lobby' : 'lobbies'}
                 </span>
               )}
             </div>
@@ -402,6 +402,11 @@ export function Home() {
               Discord
             </a>
           </div>
+          {lobbyStats !== null && (
+            <p className="mt-3 text-deadlock-muted">
+              <span className="text-amber font-medium">{lobbyStats.total.toLocaleString()}</span> lobbies created
+            </p>
+          )}
         </div>
       </footer>
 

@@ -1,4 +1,4 @@
-import { db, lobbies, lobbyParticipants } from '../db';
+import { db, lobbies, lobbyParticipants, siteStats } from '../db';
 import { eq, and, or, lt, sql } from 'drizzle-orm';
 import { nanoid, customAlphabet } from 'nanoid';
 import { getConfig } from '../config/env';
@@ -110,6 +110,9 @@ export class LobbyManager {
         team: 'unassigned',
       })
       .returning();
+
+    // Increment total lobbies counter
+    await this.incrementLobbyCount();
 
     return toLobbyWithParticipants(
       lobby,
@@ -868,6 +871,9 @@ export class LobbyManager {
       })
       .returning();
 
+    // Increment total lobbies counter
+    await this.incrementLobbyCount();
+
     return toLobbyWithParticipants(
       lobby,
       [{ ...hostParticipant, user: hostUser }],
@@ -1070,14 +1076,23 @@ export class LobbyManager {
   }
 
   async getTotalActiveLobbyCount(): Promise<number> {
-    const result = await db.query.lobbies.findMany({
-      where: or(
-        eq(lobbies.status, 'waiting'),
-        eq(lobbies.status, 'in_progress')
-      ),
-      columns: { id: true },
-    });
-    return result.length;
+    const result = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(lobbies)
+      .where(or(eq(lobbies.status, 'waiting'), eq(lobbies.status, 'in_progress')));
+    return result[0]?.count ?? 0;
+  }
+
+  async getTotalLobbiesCreated(): Promise<number> {
+    const result = await db.query.siteStats.findFirst();
+    return result?.totalLobbiesCreated ?? 0;
+  }
+
+  private async incrementLobbyCount(): Promise<void> {
+    await db
+      .update(siteStats)
+      .set({ totalLobbiesCreated: sql`${siteStats.totalLobbiesCreated} + 1` })
+      .where(eq(siteStats.id, 1));
   }
 }
 
