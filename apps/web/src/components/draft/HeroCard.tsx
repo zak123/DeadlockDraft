@@ -45,7 +45,7 @@ export function HeroCard({
       onClick={onClick}
       disabled={!isAvailable || isPicked || isBanned}
       className={clsx(
-        'relative rounded-lg overflow-hidden transition-all duration-150',
+        'relative rounded-lg overflow-hidden transition-[transform,box-shadow] duration-150',
         sizeClasses[size],
         isAvailable && !isPicked && !isBanned && 'hover:scale-105 cursor-pointer',
         isAvailable && !isPicked && !isBanned && phaseType === 'pick' && 'hover:ring-2 hover:ring-green-500 hover:shadow-[0_0_15px_rgba(34,197,94,0.5)]',

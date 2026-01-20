@@ -33,7 +33,7 @@ export function TeamDraftPanel({
       {/* Animated glow background */}
       <div
         className={clsx(
-          'absolute inset-0 rounded-xl transition-all duration-500 ease-in-out',
+          'absolute inset-0 rounded-xl transition-[opacity,box-shadow,background-color] duration-500 ease-in-out',
           isCurrentTurn && isPicking && 'bg-green-500/20 shadow-[0_0_40px_rgba(34,197,94,0.3)]',
           isCurrentTurn && !isPicking && 'bg-red-500/20 shadow-[0_0_40px_rgba(239,68,68,0.3)]',
           !isCurrentTurn && 'opacity-0'
@@ -41,7 +41,7 @@ export function TeamDraftPanel({
       />
       <div
         className={clsx(
-          'relative flex flex-col bg-deadlock-card rounded-xl p-2 sm:p-4 transition-all duration-300',
+          'relative flex flex-col bg-deadlock-card rounded-xl p-2 sm:p-4',
           isCurrentTurn && 'ring-2',
           isCurrentTurn && isPicking && 'ring-green-500',
           isCurrentTurn && !isPicking && 'ring-red-500',
