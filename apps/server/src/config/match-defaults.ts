@@ -1,7 +1,7 @@
 import type { MatchConfig } from '@deadlock-draft/shared';
 
 export const DEFAULT_MATCH_CONFIG: MatchConfig = {
-  gameMode: 'custom',
+  gameMode: 'standard',
   mapName: 'default',
   teamSize: 6,
   allowSpectators: true,

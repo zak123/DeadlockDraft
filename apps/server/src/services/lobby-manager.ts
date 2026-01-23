@@ -3,7 +3,8 @@ import { eq, and, or, lt, sql } from 'drizzle-orm';
 import { nanoid, customAlphabet } from 'nanoid';
 import { getConfig } from '../config/env';
 import { DEFAULT_MATCH_CONFIG, LOBBY_CODE_LENGTH, DEFAULT_MAX_PLAYERS, MAX_SPECTATORS } from '../config/match-defaults';
-import type { LobbyWithParticipants, MatchConfig, Team, PublicUser, TwitchLobbyWithWaitlist, TwitchRestriction } from '@deadlock-draft/shared';
+import type { LobbyWithParticipants, MatchConfig, Team, PublicUser, TwitchLobbyWithWaitlist, TwitchRestriction, GameMode } from '@deadlock-draft/shared';
+import { GAME_MODE_CONFIG } from '@deadlock-draft/shared';
 import type { Lobby, LobbyParticipant, User } from '../db/schema';
 import { twitchAuthService } from './twitch-auth';
 
@@ -474,7 +475,17 @@ export class LobbyManager {
     if (updates.name) updateData.name = updates.name;
     if (updates.maxPlayers) updateData.maxPlayers = updates.maxPlayers;
     if (updates.matchConfig) {
-      updateData.matchConfig = { ...lobby.matchConfig, ...updates.matchConfig };
+      const newMatchConfig = { ...lobby.matchConfig, ...updates.matchConfig };
+
+      // If game mode changed, update team size based on game mode config
+      if (updates.matchConfig.gameMode && updates.matchConfig.gameMode !== lobby.matchConfig.gameMode) {
+        const gameModeConfig = GAME_MODE_CONFIG[updates.matchConfig.gameMode as GameMode];
+        if (gameModeConfig) {
+          newMatchConfig.teamSize = gameModeConfig.teamSize;
+        }
+      }
+
+      updateData.matchConfig = newMatchConfig;
     }
     if (updates.allowTeamChange !== undefined) {
       updateData.allowTeamChange = updates.allowTeamChange;
@@ -486,7 +497,42 @@ export class LobbyManager {
       .where(eq(lobbies.id, lobby.id))
       .returning();
 
-    return toLobbyWithParticipants(updated, lobby.participants, lobby.host);
+    // If team size decreased, move excess players to unassigned
+    const newTeamSize = updateData.matchConfig?.teamSize ?? lobby.matchConfig.teamSize;
+    const oldTeamSize = lobby.matchConfig.teamSize;
+
+    if (newTeamSize < oldTeamSize) {
+      // Process each team (amber and sapphire)
+      for (const team of ['amber', 'sapphire'] as const) {
+        const teamParticipants = lobby.participants
+          .filter((p) => p.team === team)
+          .sort((a, b) => new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime());
+
+        // Keep the first newTeamSize players, move the rest to unassigned
+        const excessParticipants = teamParticipants.slice(newTeamSize);
+
+        for (const participant of excessParticipants) {
+          await db
+            .update(lobbyParticipants)
+            .set({ team: 'unassigned', isCaptain: false })
+            .where(eq(lobbyParticipants.id, participant.id));
+        }
+      }
+    }
+
+    // Fetch updated lobby with participants
+    const updatedLobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.id, lobby.id),
+      with: {
+        host: true,
+        participants: {
+          with: { user: true },
+        },
+      },
+    });
+
+    if (!updatedLobby) return null;
+    return toLobbyWithParticipants(updatedLobby, updatedLobby.participants, updatedLobby.host);
   }
 
   async cancelLobby(code: string, hostUserId: string): Promise<void> {

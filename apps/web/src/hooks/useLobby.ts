@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 import { useWebSocket } from './useWebSocket';
-import type { LobbyWithParticipants, Team, WSServerMessage } from '@deadlock-draft/shared';
+import type { LobbyWithParticipants, Team, WSServerMessage, GameMode } from '@deadlock-draft/shared';
 
 interface ChatMessage {
   senderId: string;
@@ -204,6 +204,22 @@ export function useLobby(code: string | null) {
     [code]
   );
 
+  const setGameMode = useCallback(
+    async (gameMode: GameMode) => {
+      if (!code) return;
+      try {
+        const updatedLobby = await api.updateLobby(code, {
+          matchConfig: { gameMode },
+        });
+        setLobby(updatedLobby);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to change game mode');
+        throw err;
+      }
+    },
+    [code]
+  );
+
   const createMatch = useCallback(async () => {
     if (!code) return;
     try {
@@ -238,6 +254,7 @@ export function useLobby(code: string | null) {
     kickParticipant,
     changeSelfTeam,
     updateLobbySettings,
+    setGameMode,
     createMatch,
     readyMatch,
   };

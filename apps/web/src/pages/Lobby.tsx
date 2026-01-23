@@ -35,6 +35,7 @@ export function Lobby() {
     kickParticipant,
     changeSelfTeam,
     updateLobbySettings,
+    setGameMode,
     readyMatch,
     refresh,
   } = useLobby(code || null);
@@ -478,6 +479,7 @@ export function Lobby() {
                   onLeaveLobby={handleLeaveLobby}
                   onCancelLobby={handleCancelLobby}
                   onUpdateLobbySettings={updateLobbySettings}
+                  onSetGameMode={setGameMode}
                   onUpdateDraftConfig={updateConfig}
                   onStartDraft={startDraft}
                 />
