@@ -43,9 +43,15 @@ export interface PublicUser {
 export type LobbyStatus = 'waiting' | 'starting' | 'in_progress' | 'completed' | 'cancelled';
 export type Team = 'amber' | 'sapphire' | 'spectator' | 'unassigned';
 export type TwitchRestriction = 'none' | 'followers' | 'subscribers';
+export type GameMode = 'standard' | 'street_brawl';
+
+export const GAME_MODE_CONFIG: Record<GameMode, { label: string; teamSize: number }> = {
+  standard: { label: 'Standard (6v6)', teamSize: 6 },
+  street_brawl: { label: 'Street Brawl (4v4)', teamSize: 4 },
+};
 
 export interface MatchConfig {
-  gameMode: string;
+  gameMode: GameMode;
   mapName: string;
   teamSize: number;
   allowSpectators: boolean;

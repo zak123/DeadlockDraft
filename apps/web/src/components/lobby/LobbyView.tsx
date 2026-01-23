@@ -3,7 +3,8 @@ import { TeamPanel } from './TeamPanel';
 import { Button } from '../common/Button';
 import { DraftConfigModal } from '../draft';
 import { useAuth } from '../../hooks/useAuth';
-import type { LobbyWithParticipants, Team, DraftConfig, UpdateDraftConfigRequest, DraftState } from '@deadlock-draft/shared';
+import type { LobbyWithParticipants, Team, DraftConfig, UpdateDraftConfigRequest, DraftState, GameMode } from '@deadlock-draft/shared';
+import { GAME_MODE_CONFIG } from '@deadlock-draft/shared';
 
 interface LobbyViewProps {
   lobby: LobbyWithParticipants;
@@ -17,6 +18,7 @@ interface LobbyViewProps {
   onLeaveLobby: () => void;
   onCancelLobby: () => void;
   onUpdateLobbySettings: (settings: { allowTeamChange?: boolean }) => Promise<void>;
+  onSetGameMode: (gameMode: GameMode) => Promise<void>;
   onUpdateDraftConfig: (updates: UpdateDraftConfigRequest) => Promise<DraftConfig | undefined>;
   onStartDraft: () => Promise<DraftState | undefined>;
 }
@@ -33,6 +35,7 @@ export function LobbyView({
   onLeaveLobby,
   onCancelLobby,
   onUpdateLobbySettings,
+  onSetGameMode,
   onUpdateDraftConfig,
   onStartDraft,
 }: LobbyViewProps) {
@@ -180,6 +183,24 @@ export function LobbyView({
                   <span className="text-deadlock-muted"> + {teamGroups.spectator.length} spectator{teamGroups.spectator.length !== 1 ? 's' : ''}</span>
                 )}
               </span>
+              {isHost && (
+                <select
+                  value={lobby.matchConfig.gameMode}
+                  onChange={(e) => onSetGameMode(e.target.value as GameMode)}
+                  className="bg-deadlock-bg border border-deadlock-border rounded-lg px-3 py-1 text-sm text-deadlock-text focus:outline-none focus:border-amber cursor-pointer"
+                >
+                  {(Object.keys(GAME_MODE_CONFIG) as GameMode[]).map((mode) => (
+                    <option key={mode} value={mode}>
+                      {GAME_MODE_CONFIG[mode].label}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {!isHost && (
+                <span className="text-sm bg-deadlock-bg border border-deadlock-border rounded-lg px-3 py-1">
+                  {GAME_MODE_CONFIG[lobby.matchConfig.gameMode as GameMode]?.label || 'Standard (6v6)'}
+                </span>
+              )}
             </div>
             {lobby.isTwitchLobby && isHost && (
               <p className="text-xs text-deadlock-muted mt-1">
