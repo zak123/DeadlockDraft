@@ -12,6 +12,11 @@ A custom match coordinator for [Deadlock](https://store.steampowered.com/app/142
 - **Real-time Updates** - WebSocket-powered live updates for all lobby participants
 - **Anonymous Joining** - Players can join lobbies without Steam accounts using a display name
 - **Match Creation** - Generate Deadlock party codes to start custom matches
+- **Game Modes** - Support for Standard (6v6) and Street Brawl (4v4) modes
+- **Twitch Integration** - Link Twitch account, create follower-only lobbies, view live streamer lobbies
+- **Team Chat** - In-draft team chat for coordination (with team chat as default)
+- **Hero Selection** - Select your preferred hero at the end of draft
+- **Play Again** - Quickly create a new lobby with the same players after a draft
 
 ## Tech Stack
 
@@ -71,8 +76,13 @@ deadlock-draft/
    DATABASE_URL=./data/deadlock-draft.db
    STEAM_API_KEY=your_steam_api_key
    DEADLOCK_API_KEY=
+   DEADLOCK_API_URL=
    SESSION_SECRET=your_32_character_secret_here
    LOBBY_EXPIRY_HOURS=2
+   # Twitch OAuth (optional - for Twitch integration)
+   TWITCH_CLIENT_ID=
+   TWITCH_CLIENT_SECRET=
+   TWITCH_REDIRECT_URI=http://localhost:3000/api/auth/twitch/callback
    ```
 
 4. **Setup database**
@@ -137,8 +147,13 @@ deadlock-draft/
    DATABASE_URL=./data/deadlock-draft.db
    STEAM_API_KEY=your_steam_api_key
    DEADLOCK_API_KEY=
+   DEADLOCK_API_URL=
    SESSION_SECRET=your_32_character_secret_here
    LOBBY_EXPIRY_HOURS=2
+   # Twitch OAuth (optional - for Twitch integration)
+   TWITCH_CLIENT_ID=
+   TWITCH_CLIENT_SECRET=
+   TWITCH_REDIRECT_URI=https://yourdomain.com/api/auth/twitch/callback
    EOF
 
    cp .env apps/server/.env
@@ -235,8 +250,12 @@ Connect to `/ws` for real-time lobby updates. See `packages/shared/src/index.ts`
 | `DATABASE_URL` | SQLite database path | `./data/deadlock-draft.db` |
 | `STEAM_API_KEY` | Steam Web API key | Required |
 | `DEADLOCK_API_KEY` | Deadlock API key | Optional |
+| `DEADLOCK_API_URL` | Deadlock API URL | Optional |
 | `SESSION_SECRET` | Session encryption key (32+ chars) | Required |
 | `LOBBY_EXPIRY_HOURS` | Hours until lobby expires | `2` |
+| `TWITCH_CLIENT_ID` | Twitch OAuth client ID | Optional |
+| `TWITCH_CLIENT_SECRET` | Twitch OAuth client secret | Optional |
+| `TWITCH_REDIRECT_URI` | Twitch OAuth redirect URI | Optional |
 
 ## Contributing
 
