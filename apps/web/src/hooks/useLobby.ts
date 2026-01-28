@@ -220,6 +220,22 @@ export function useLobby(code: string | null) {
     [code]
   );
 
+  const setTeamSize = useCallback(
+    async (teamSize: number) => {
+      if (!code) return;
+      try {
+        const updatedLobby = await api.updateLobby(code, {
+          matchConfig: { teamSize },
+        });
+        setLobby(updatedLobby);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to change team size');
+        throw err;
+      }
+    },
+    [code]
+  );
+
   const createMatch = useCallback(async () => {
     if (!code) return;
     try {
@@ -255,6 +271,7 @@ export function useLobby(code: string | null) {
     changeSelfTeam,
     updateLobbySettings,
     setGameMode,
+    setTeamSize,
     createMatch,
     readyMatch,
   };
