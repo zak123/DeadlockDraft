@@ -79,13 +79,14 @@ draft.patch('/:code/draft/config', requireAuth, async (c) => {
   }
 });
 
-// Start draft (host only)
-draft.post('/:code/draft/start', requireAuth, async (c) => {
+// Start draft (host only, or any participant for API lobbies)
+draft.post('/:code/draft/start', optionalAuth, async (c) => {
   const code = c.req.param('code');
-  const user = getAuthUser(c);
+  const user = c.get('user');
+  const sessionToken = c.req.header('x-session-token');
 
   try {
-    const draftState = await draftManager.startDraft(code, user.id);
+    const draftState = await draftManager.startDraft(code, user?.id, sessionToken || undefined);
     return c.json<StartDraftResponse>({ draftState }, 201);
   } catch (error) {
     if (error instanceof Error) {

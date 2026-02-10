@@ -47,6 +47,7 @@ export function LobbyView({
   const [showCopiedToast, setShowCopiedToast] = useState(false);
 
   const isHost = user?.id === lobby.hostUserId;
+  const isApiLobby = !lobby.hostUserId;
   const currentSessionToken = localStorage.getItem('anonymousSessionToken');
 
   const currentParticipant = useMemo(() => {
@@ -320,15 +321,17 @@ export function LobbyView({
             )}
           </div>
 
-          {isHost && !lobby.deadlockPartyCode && (
+          {(isHost || (isApiLobby && currentParticipant)) && !lobby.deadlockPartyCode && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={() => setShowDraftConfig(true)}
-                >
-                  Configure Draft
-                </Button>
+                {isHost && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowDraftConfig(true)}
+                  >
+                    Configure Draft
+                  </Button>
+                )}
                 <button
                   onClick={handleStartDraft}
                   disabled={startingDraft}

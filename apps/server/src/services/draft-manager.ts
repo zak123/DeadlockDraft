@@ -196,7 +196,7 @@ export class DraftManager {
     };
   }
 
-  async startDraft(lobbyCode: string, hostUserId: string): Promise<DraftState> {
+  async startDraft(lobbyCode: string, userId?: string, sessionToken?: string): Promise<DraftState> {
     const lobby = await db.query.lobbies.findFirst({
       where: eq(lobbies.code, lobbyCode.toUpperCase()),
       with: {
@@ -208,8 +208,19 @@ export class DraftManager {
       throw new Error('Lobby not found');
     }
 
-    if (lobby.hostUserId !== hostUserId) {
-      throw new Error('Only the host can start the draft');
+    if (lobby.hostUserId) {
+      // Hosted lobby: only the host can start
+      if (lobby.hostUserId !== userId) {
+        throw new Error('Only the host can start the draft');
+      }
+    } else {
+      // API lobby (no host): any participant can start
+      const isParticipant = lobby.participants.some(
+        p => (userId && p.userId === userId) || (sessionToken && p.sessionToken === sessionToken)
+      );
+      if (!isParticipant) {
+        throw new Error('Only participants can start the draft');
+      }
     }
 
     if (lobby.status !== 'waiting') {
