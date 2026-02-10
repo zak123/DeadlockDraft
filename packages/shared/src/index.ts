@@ -63,7 +63,7 @@ export interface Lobby {
   id: string;
   code: string;
   name: string;
-  hostUserId: string;
+  hostUserId: string | null;
   status: LobbyStatus;
   deadlockPartyCode: string | null;
   deadlockLobbyId: string | null;
@@ -100,7 +100,7 @@ export interface LobbyParticipant {
 
 export interface LobbyWithParticipants extends Lobby {
   participants: LobbyParticipant[];
-  host: PublicUser;
+  host: PublicUser | null;
 }
 
 // Waitlist types
@@ -116,6 +116,21 @@ export interface WaitlistEntry {
 export interface TwitchLobbyWithWaitlist extends LobbyWithParticipants {
   waitlistCount: number;
   viewerCount: number; // Live viewer count from Twitch (0 if offline)
+}
+
+// External API Request/Response types
+export interface CreateApiLobbyRequest {
+  api_identifier: string;
+  name?: string;
+  matchConfig?: Partial<MatchConfig>;
+  maxPlayers?: number;
+  allowTeamChange?: boolean;
+}
+
+export interface CreateApiLobbyResponse {
+  url: string;
+  code: string;
+  lobby: LobbyWithParticipants;
 }
 
 // API Request/Response types

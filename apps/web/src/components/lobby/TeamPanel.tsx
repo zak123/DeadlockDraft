@@ -7,7 +7,7 @@ interface TeamPanelProps {
   team: Team;
   participants: LobbyParticipant[];
   maxSize?: number;
-  hostUserId: string;
+  hostUserId: string | null;
   currentUserId?: string;
   currentSessionToken?: string;
   onMoveToTeam?: (participantId: string, team: Team) => void;

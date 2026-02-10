@@ -41,7 +41,7 @@ export const lobbies = sqliteTable('lobbies', {
   id: text('id').primaryKey(),
   code: text('code').notNull().unique(),
   name: text('name').notNull(),
-  hostUserId: text('host_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  hostUserId: text('host_user_id').references(() => users.id, { onDelete: 'cascade' }),
   status: text('status', { enum: ['waiting', 'starting', 'in_progress', 'completed', 'cancelled'] }).notNull().default('waiting'),
   deadlockPartyCode: text('deadlock_party_code'),
   deadlockLobbyId: text('deadlock_lobby_id'),
@@ -62,6 +62,7 @@ export const lobbies = sqliteTable('lobbies', {
   twitchAcceptingPlayers: integer('twitch_accepting_players', { mode: 'boolean' }).notNull().default(false),
   twitchStreamUrl: text('twitch_stream_url'),
   twitchRestriction: text('twitch_restriction', { enum: ['none', 'followers', 'subscribers'] }).notNull().default('none'),
+  apiIdentifier: text('api_identifier'), // Only set for API-created lobbies
   inviteCode: text('invite_code'), // Separate from URL code for Twitch lobbies
   draftCompletedAt: text('draft_completed_at'),
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),

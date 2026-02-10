@@ -27,7 +27,7 @@ function toPublicUser(user: User): PublicUser {
 function toLobbyWithParticipants(
   lobby: Lobby,
   participants: (LobbyParticipant & { user: User | null })[],
-  host: User
+  host: User | null
 ): LobbyWithParticipants {
   return {
     id: lobby.id,
@@ -51,7 +51,7 @@ function toLobbyWithParticipants(
     createdAt: lobby.createdAt,
     updatedAt: lobby.updatedAt,
     expiresAt: lobby.expiresAt,
-    host: toPublicUser(host),
+    host: host ? toPublicUser(host) : null,
     participants: participants.map((p) => ({
       id: p.id,
       lobbyId: p.lobbyId,
@@ -120,6 +120,40 @@ export class LobbyManager {
       [{ ...hostParticipant, user: hostUser }],
       hostUser
     );
+  }
+
+  async createApiLobby(
+    apiIdentifier: string,
+    name?: string,
+    matchConfig?: Partial<MatchConfig>,
+    maxPlayers?: number,
+    allowTeamChange?: boolean
+  ): Promise<LobbyWithParticipants> {
+    const code = generateCode();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + this.config.LOBBY_EXPIRY_HOURS);
+
+    const lobbyName = name || 'API Lobby';
+
+    const [lobby] = await db
+      .insert(lobbies)
+      .values({
+        id: nanoid(),
+        code,
+        name: lobbyName,
+        hostUserId: null,
+        matchConfig: { ...DEFAULT_MATCH_CONFIG, ...matchConfig },
+        maxPlayers: maxPlayers || DEFAULT_MAX_PLAYERS,
+        allowTeamChange: allowTeamChange ?? true,
+        apiIdentifier,
+        expiresAt: expiresAt.toISOString(),
+      })
+      .returning();
+
+    // Increment total lobbies counter
+    await this.incrementLobbyCount();
+
+    return toLobbyWithParticipants(lobby, [], null);
   }
 
   async getLobbyByCode(code: string): Promise<LobbyWithParticipants | null> {
@@ -1012,7 +1046,7 @@ export class LobbyManager {
 
     // Get Twitch usernames for viewer count lookup
     const usernames = filteredLobbies
-      .map((lobby) => lobby.host.twitchUsername)
+      .map((lobby) => lobby.host?.twitchUsername)
       .filter((username): username is string => !!username);
 
     // Fetch viewer counts from Twitch API
@@ -1020,7 +1054,7 @@ export class LobbyManager {
 
     // Map lobbies with viewer counts and sort by viewer count (highest first)
     const lobbiesWithViewerCount = filteredLobbies.map((lobby) => {
-      const username = lobby.host.twitchUsername?.toLowerCase();
+      const username = lobby.host?.twitchUsername?.toLowerCase();
       const viewerCount = username ? (viewerCounts.get(username) ?? 0) : 0;
       return {
         ...toLobbyWithParticipants(lobby, lobby.participants, lobby.host),

@@ -179,7 +179,7 @@ export function TwitchLobbiesPanel() {
             <p className="text-gray-300 mb-4">
               You need to sign in with Steam to join{' '}
               <span className="text-white font-medium">
-                {pendingLobby.host.twitchDisplayName || pendingLobby.host.displayName}
+                {pendingLobby.host?.twitchDisplayName || pendingLobby.host?.displayName}
               </span>'s lobby queue.
             </p>
             <div className="flex gap-3 justify-end">
@@ -222,7 +222,7 @@ export function TwitchLobbiesPanel() {
               lobby. You need to link your Twitch account so we can verify you{' '}
               {pendingLobby.twitchRestriction === 'followers' ? 'follow' : 'are subscribed to'}{' '}
               <span className="text-white font-medium">
-                {pendingLobby.host.twitchDisplayName || pendingLobby.host.displayName}
+                {pendingLobby.host?.twitchDisplayName || pendingLobby.host?.displayName}
               </span>.
             </p>
             <div className="flex gap-3 justify-end">
@@ -262,7 +262,7 @@ function TwitchLobbyCard({ lobby, onJoinQueue }: TwitchLobbyCardProps) {
   return (
     <div className="bg-gray-700 rounded-lg p-4 flex items-center justify-between">
       <div className="flex items-center gap-4">
-        {lobby.host.twitchAvatar && (
+        {lobby.host?.twitchAvatar && (
           <img
             src={lobby.host.twitchAvatar}
             alt={lobby.host.twitchDisplayName || lobby.host.displayName}
@@ -271,7 +271,7 @@ function TwitchLobbyCard({ lobby, onJoinQueue }: TwitchLobbyCardProps) {
         )}
         <div>
           <div className="text-white font-medium flex items-center gap-2">
-            {lobby.host.twitchDisplayName || lobby.host.displayName}'s Lobby
+            {lobby.host?.twitchDisplayName || lobby.host?.displayName}'s Lobby
             {lobby.twitchRestriction === 'followers' && (
               <span className="px-1.5 py-0.5 bg-purple-600/70 text-white text-xs rounded font-medium flex items-center gap-1">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -9,6 +9,7 @@ import { auth } from './routes/auth';
 import { lobbies } from './routes/lobbies';
 import { matches } from './routes/matches';
 import { draft } from './routes/draft';
+import { apiLobbies } from './routes/api-lobbies';
 import { websocketHandlers } from './services/websocket';
 import { lobbyManager } from './services/lobby-manager';
 import { db, sessions, siteStats, lobbies as lobbiesTable } from './db';
@@ -54,6 +55,7 @@ app.route('/api/lobbies', lobbies);
 app.route('/api/lobbies', matches);
 app.route('/api/lobbies', draft);
 app.route('/api', draft);
+app.route('/api/external', apiLobbies);
 
 // 404 handler
 app.notFound((c) => {

@@ -568,7 +568,7 @@ lobbies.post('/:code/waitlist/join', requireAuth, async (c) => {
     }
 
     // Get host to check relationship
-    if (!lobby.host.twitchId) {
+    if (!lobby.host?.twitchId) {
       throw new HTTPException(500, { message: 'Host Twitch account not found' });
     }
 
