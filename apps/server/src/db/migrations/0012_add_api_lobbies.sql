@@ -7,11 +7,12 @@ PRAGMA foreign_keys=OFF;
 ALTER TABLE lobbies ADD COLUMN api_identifier TEXT;
 
 -- Recreate lobbies table with host_user_id nullable
+-- Note: no inline UNIQUE on code — use named index to match drizzle's expected schema
 CREATE TABLE lobbies_new (
-  id TEXT PRIMARY KEY,
-  code TEXT NOT NULL UNIQUE,
+  id TEXT PRIMARY KEY NOT NULL,
+  code TEXT NOT NULL,
   name TEXT NOT NULL,
-  host_user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  host_user_id TEXT,
   status TEXT NOT NULL DEFAULT 'waiting',
   deadlock_party_code TEXT,
   deadlock_lobby_id TEXT,
@@ -29,7 +30,8 @@ CREATE TABLE lobbies_new (
   draft_completed_at TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
-  expires_at TEXT NOT NULL
+  expires_at TEXT NOT NULL,
+  FOREIGN KEY (host_user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 INSERT INTO lobbies_new SELECT
@@ -44,7 +46,8 @@ FROM lobbies;
 DROP TABLE lobbies;
 ALTER TABLE lobbies_new RENAME TO lobbies;
 
--- Recreate indexes
+-- Recreate indexes (named to match drizzle schema)
+CREATE UNIQUE INDEX lobbies_code_unique ON lobbies(code);
 CREATE INDEX lobbies_code_idx ON lobbies(code);
 CREATE INDEX lobbies_status_idx ON lobbies(status);
 CREATE INDEX lobbies_host_user_id_idx ON lobbies(host_user_id);
