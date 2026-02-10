@@ -45,9 +45,32 @@ jobs:
             echo "Installing dependencies..."
             bun install
 
+            # Apply manual SQL migrations before drizzle-kit push (for SQLite compatibility)
+            echo "Applying SQL migrations..."
+            cd apps/server
+            set -a && source .env 2>/dev/null || true && set +a
+            bun -e "
+            import { Database } from 'bun:sqlite';
+            import { readFileSync } from 'fs';
+            const dbPath = process.env.DATABASE_URL || './data/deadlock-draft.db';
+            console.log('  Using database:', dbPath);
+            const db = new Database(dbPath);
+            try {
+              db.prepare('SELECT api_identifier FROM lobbies LIMIT 0').run();
+              console.log('  Migration 0012 already applied');
+            } catch(e) {
+              console.log('  Applying migration 0012_add_api_lobbies...');
+              const sql = readFileSync('src/db/migrations/0012_add_api_lobbies.sql', 'utf-8');
+              db.exec(sql);
+              console.log('  Migration 0012 applied successfully');
+            }
+            db.close();
+            "
+
             # Sync database schema (timeout ensures CI fails if interactive prompt appears)
             echo "Syncing database schema..."
-            cd apps/server && timeout 30 bunx drizzle-kit push --force && cd ../..
+            timeout 30 bunx drizzle-kit push --force
+            cd ../..
 
             # Build frontend
             echo "Building frontend..."
