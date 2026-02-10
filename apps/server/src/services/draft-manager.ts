@@ -15,10 +15,11 @@ import { deadlockApiClient } from './deadlock-api';
 
 // All available heroes
 const HEROES = [
-  'abrams', 'bebop', 'billy', 'calico', 'doorman', 'drifter', 'dynamo', 'grey_talon',
-  'haze', 'holliday', 'infernus', 'ivy', 'kelvin', 'lady_geist', 'lash', 'mcginnis',
-  'mina', 'mirage', 'mokrill', 'paige', 'paradox', 'pocket', 'seven', 'shiv',
-  'sinclair', 'victor', 'vindicta', 'viscous', 'vyper', 'warden', 'wraith', 'yamato',
+  'abrams', 'apollo', 'bebop', 'billy', 'calico', 'celeste', 'doorman', 'drifter', 'dynamo',
+  'graves', 'grey_talon', 'haze', 'holliday', 'infernus', 'ivy', 'kelvin', 'lady_geist',
+  'lash', 'mcginnis', 'mina', 'mirage', 'mokrill', 'paige', 'paradox', 'pocket', 'rem',
+  'seven', 'shiv', 'silver', 'sinclair', 'venator', 'victor', 'vindicta', 'viscous', 'vyper',
+  'warden', 'wraith', 'yamato',
 ];
 
 const DEFAULT_PHASES: DraftPhase[] = [
