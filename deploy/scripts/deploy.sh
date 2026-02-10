@@ -17,10 +17,18 @@ bun install
 # Apply manual SQL migrations before drizzle-kit push (for SQLite compatibility)
 echo "Applying SQL migrations..."
 cd apps/server
+
+# Load .env so DATABASE_URL matches what drizzle-kit uses
+set -a
+source .env 2>/dev/null || true
+set +a
+
 bun -e "
 import { Database } from 'bun:sqlite';
 import { readFileSync } from 'fs';
-const db = new Database(process.env.DATABASE_URL || './data/deadlock-draft.db');
+const dbPath = process.env.DATABASE_URL || './data/deadlock-draft.db';
+console.log('  Using database:', dbPath);
+const db = new Database(dbPath);
 // Check if migration already applied (api_identifier column exists)
 try {
   db.prepare('SELECT api_identifier FROM lobbies LIMIT 0').run();
