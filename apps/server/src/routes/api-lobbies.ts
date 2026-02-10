@@ -8,8 +8,12 @@ import type { CreateApiLobbyResponse } from '@deadlock-draft/shared';
 
 const apiLobbies = new Hono();
 
-// Stricter rate limit for external API
-apiLobbies.use('*', rateLimit({ windowMs: 60000, max: 10 }));
+// Stricter rate limit for external API (separate key prefix to avoid sharing bucket with global limiter)
+apiLobbies.use('*', rateLimit({
+  windowMs: 60000,
+  max: 10,
+  keyGenerator: (c) => `ext:${c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown'}`,
+}));
 
 const createApiLobbySchema = z.object({
   api_identifier: z.string().min(1).max(100),

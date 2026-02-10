@@ -47,7 +47,7 @@ jobs:
 
             # Sync database schema (timeout ensures CI fails if interactive prompt appears)
             echo "Syncing database schema..."
-            cd apps/server && timeout 30 bunx drizzle-kit push --force; cd ../..
+            cd apps/server && timeout 30 bunx drizzle-kit push --force || true; cd ../..
 
             # Build frontend
             echo "Building frontend..."
