@@ -19,8 +19,18 @@ echo "Applying SQL migrations..."
 cd apps/server
 bun -e "
 import { Database } from 'bun:sqlite';
+import { readFileSync } from 'fs';
 const db = new Database(process.env.DATABASE_URL || './data/deadlock-draft.db');
-try { db.run('ALTER TABLE lobbies ADD COLUMN api_identifier TEXT'); console.log('  Added api_identifier column'); } catch(e) { console.log('  api_identifier column already exists'); }
+// Check if migration already applied (api_identifier column exists)
+try {
+  db.prepare('SELECT api_identifier FROM lobbies LIMIT 0').run();
+  console.log('  Migration 0012 already applied');
+} catch(e) {
+  console.log('  Applying migration 0012_add_api_lobbies...');
+  const sql = readFileSync('src/db/migrations/0012_add_api_lobbies.sql', 'utf-8');
+  db.exec(sql);
+  console.log('  Migration 0012 applied successfully');
+}
 db.close();
 "
 
