@@ -33,9 +33,9 @@ const createLobbySchema = z.object({
   name: z.string().min(1).max(100).optional(),
   matchConfig: z
     .object({
-      gameMode: z.enum(['standard', 'street_brawl']).optional(),
+      gameMode: z.enum(['standard', 'street_brawl', 'custom']).optional(),
       mapName: z.string().optional(),
-      teamSize: z.number().min(1).max(6).optional(),
+      teamSize: z.number().min(1).max(12).optional(),
       allowSpectators: z.boolean().optional(),
       maxRounds: z.number().min(1).optional(),
       roundTime: z.number().min(60).optional(),
@@ -53,9 +53,9 @@ const updateLobbySchema = z.object({
   name: z.string().min(1).max(100).optional(),
   matchConfig: z
     .object({
-      gameMode: z.enum(['standard', 'street_brawl']).optional(),
+      gameMode: z.enum(['standard', 'street_brawl', 'custom']).optional(),
       mapName: z.string().optional(),
-      teamSize: z.number().min(1).max(6).optional(),
+      teamSize: z.number().min(1).max(12).optional(),
       allowSpectators: z.boolean().optional(),
       maxRounds: z.number().min(1).optional(),
       roundTime: z.number().min(60).optional(),
@@ -125,9 +125,9 @@ lobbies.post('/twitch', requireAuth, async (c) => {
   const createTwitchLobbySchema = z.object({
     matchConfig: z
       .object({
-        gameMode: z.enum(['standard', 'street_brawl']).optional(),
+        gameMode: z.enum(['standard', 'street_brawl', 'custom']).optional(),
         mapName: z.string().optional(),
-        teamSize: z.number().min(1).max(6).optional(),
+        teamSize: z.number().min(1).max(12).optional(),
         allowSpectators: z.boolean().optional(),
         maxRounds: z.number().min(1).optional(),
         roundTime: z.number().min(60).optional(),

@@ -43,11 +43,12 @@ export interface PublicUser {
 export type LobbyStatus = 'waiting' | 'starting' | 'in_progress' | 'completed' | 'cancelled';
 export type Team = 'amber' | 'sapphire' | 'spectator' | 'unassigned';
 export type TwitchRestriction = 'none' | 'followers' | 'subscribers';
-export type GameMode = 'standard' | 'street_brawl';
+export type GameMode = 'standard' | 'street_brawl' | 'custom';
 
 export const GAME_MODE_CONFIG: Record<GameMode, { label: string; teamSize: number }> = {
   standard: { label: 'Standard (6v6)', teamSize: 6 },
   street_brawl: { label: 'Street Brawl (4v4)', teamSize: 4 },
+  custom: { label: 'Custom', teamSize: 6 },
 };
 
 export interface MatchConfig {

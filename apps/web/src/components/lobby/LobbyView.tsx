@@ -19,6 +19,7 @@ interface LobbyViewProps {
   onCancelLobby: () => void;
   onUpdateLobbySettings: (settings: { allowTeamChange?: boolean }) => Promise<void>;
   onSetGameMode: (gameMode: GameMode) => Promise<void>;
+  onSetTeamSize: (teamSize: number) => Promise<void>;
   onUpdateDraftConfig: (updates: UpdateDraftConfigRequest) => Promise<DraftConfig | undefined>;
   onStartDraft: () => Promise<DraftState | undefined>;
 }
@@ -36,6 +37,7 @@ export function LobbyView({
   onCancelLobby,
   onUpdateLobbySettings,
   onSetGameMode,
+  onSetTeamSize,
   onUpdateDraftConfig,
   onStartDraft,
 }: LobbyViewProps) {
@@ -185,21 +187,44 @@ export function LobbyView({
                 )}
               </span>
               {isHost && (
-                <select
-                  value={lobby.matchConfig.gameMode}
-                  onChange={(e) => onSetGameMode(e.target.value as GameMode)}
-                  className="bg-deadlock-bg border border-deadlock-border rounded-lg px-3 py-1 text-sm text-deadlock-text focus:outline-none focus:border-amber cursor-pointer"
-                >
-                  {(Object.keys(GAME_MODE_CONFIG) as GameMode[]).map((mode) => (
-                    <option key={mode} value={mode}>
-                      {GAME_MODE_CONFIG[mode].label}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={lobby.matchConfig.gameMode}
+                    onChange={(e) => onSetGameMode(e.target.value as GameMode)}
+                    className="bg-deadlock-bg border border-deadlock-border rounded-lg px-3 py-1 text-sm text-deadlock-text focus:outline-none focus:border-amber cursor-pointer"
+                  >
+                    {(Object.keys(GAME_MODE_CONFIG) as GameMode[]).map((mode) => (
+                      <option key={mode} value={mode}>
+                        {GAME_MODE_CONFIG[mode].label}
+                      </option>
+                    ))}
+                  </select>
+                  {lobby.matchConfig.gameMode === 'custom' && (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={1}
+                        max={12}
+                        value={lobby.matchConfig.teamSize}
+                        onChange={(e) => {
+                          const size = parseInt(e.target.value, 10);
+                          if (size >= 1 && size <= 12) {
+                            onSetTeamSize(size);
+                          }
+                        }}
+                        className="w-14 bg-deadlock-bg border border-deadlock-border rounded-lg px-2 py-1 text-sm text-deadlock-text focus:outline-none focus:border-amber text-center"
+                      />
+                      <span className="text-sm text-deadlock-muted">v</span>
+                      <span className="text-sm text-deadlock-text">{lobby.matchConfig.teamSize}</span>
+                    </div>
+                  )}
+                </div>
               )}
               {!isHost && (
                 <span className="text-sm bg-deadlock-bg border border-deadlock-border rounded-lg px-3 py-1">
-                  {GAME_MODE_CONFIG[lobby.matchConfig.gameMode as GameMode]?.label || 'Standard (6v6)'}
+                  {lobby.matchConfig.gameMode === 'custom'
+                    ? `Custom (${lobby.matchConfig.teamSize}v${lobby.matchConfig.teamSize})`
+                    : GAME_MODE_CONFIG[lobby.matchConfig.gameMode as GameMode]?.label || 'Standard (6v6)'}
                 </span>
               )}
             </div>
