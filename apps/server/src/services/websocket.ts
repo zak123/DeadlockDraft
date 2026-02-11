@@ -176,6 +176,11 @@ class WebSocketManager {
 
     if (lobby) {
       this.broadcastToLobby(ws.data.lobbyCode, { type: 'lobby:update', lobby });
+
+      // Check if auto-start conditions are met
+      if (isReady) {
+        await this.checkAutoStart(ws.data.lobbyCode, ws.data.userId || undefined, ws.data.sessionToken || undefined);
+      }
     }
   }
 
@@ -403,6 +408,33 @@ class WebSocketManager {
       ws.send(JSON.stringify(message));
     } catch (error) {
       console.error('WebSocket send error:', error);
+    }
+  }
+
+  // Check if auto-start conditions are met and start the draft
+  async checkAutoStart(lobbyCode: string, userId?: string, sessionToken?: string) {
+    try {
+      const lobby = await lobbyManager.getLobbyByCode(lobbyCode);
+      if (!lobby) return;
+
+      if (!lobby.matchConfig.autoStart) return;
+      if (lobby.status !== 'waiting') return;
+
+      const { teamSize } = lobby.matchConfig;
+      const amberPlayers = lobby.participants.filter((p) => p.team === 'amber');
+      const sapphirePlayers = lobby.participants.filter((p) => p.team === 'sapphire');
+
+      if (amberPlayers.length !== teamSize || sapphirePlayers.length !== teamSize) return;
+
+      const allTeamPlayers = [...amberPlayers, ...sapphirePlayers];
+      if (!allTeamPlayers.every((p) => p.isReady)) return;
+
+      // All conditions met — start the draft
+      await draftManager.startDraft(lobbyCode, userId, sessionToken);
+    } catch (error) {
+      // Race conditions (e.g., two players readying simultaneously) are expected —
+      // startDraft will reject the second call with "Draft is already in progress"
+      console.log('Auto-start check:', error instanceof Error ? error.message : error);
     }
   }
 

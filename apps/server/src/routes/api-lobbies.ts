@@ -26,6 +26,7 @@ const createApiLobbySchema = z.object({
       allowSpectators: z.boolean().optional(),
       maxRounds: z.number().min(1).optional(),
       roundTime: z.number().min(60).optional(),
+      autoStart: z.boolean().optional(),
     })
     .optional(),
   maxPlayers: z.number().min(2).max(24).optional(),

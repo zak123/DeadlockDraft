@@ -330,6 +330,9 @@ lobbies.post('/:code/change-team', optionalAuth, async (c) => {
     // Broadcast update
     await wsManager.broadcastLobbyUpdate(code);
 
+    // Check if auto-start conditions are met after team change
+    await wsManager.checkAutoStart(code, user?.id, sessionToken || undefined);
+
     return c.json({ lobby });
   } catch (error) {
     if (error instanceof Error) {

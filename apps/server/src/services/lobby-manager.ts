@@ -142,7 +142,7 @@ export class LobbyManager {
         code,
         name: lobbyName,
         hostUserId: null,
-        matchConfig: { ...DEFAULT_MATCH_CONFIG, ...matchConfig },
+        matchConfig: { ...DEFAULT_MATCH_CONFIG, autoStart: true, ...matchConfig },
         maxPlayers: maxPlayers || DEFAULT_MAX_PLAYERS,
         allowTeamChange: allowTeamChange ?? true,
         apiIdentifier,

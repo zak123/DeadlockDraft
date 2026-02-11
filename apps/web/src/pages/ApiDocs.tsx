@@ -137,6 +137,11 @@ export function ApiDocs() {
                       <td className="py-2 pr-4">boolean</td>
                       <td className="py-2 text-deadlock-muted">Allow spectators (default: true)</td>
                     </tr>
+                    <tr>
+                      <td className="py-2 pr-4 font-mono text-amber">autoStart</td>
+                      <td className="py-2 pr-4">boolean</td>
+                      <td className="py-2 text-deadlock-muted">Auto-start draft when both teams are full and all players are ready (default: true)</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -161,6 +166,7 @@ export function ApiDocs() {
     "matchConfig": {
       "gameMode": "standard",
       "teamSize": 6,
+      "autoStart": true,
       ...
     },
     "maxPlayers": 12,
@@ -185,7 +191,8 @@ export function ApiDocs() {
     "name": "My Custom Match",
     "maxPlayers": 12,
     "matchConfig": {
-      "gameMode": "standard"
+      "gameMode": "standard",
+      "autoStart": true
     }
   }'`}
               </pre>
@@ -224,8 +231,7 @@ export function ApiDocs() {
             <h3 className="font-semibold">Notes</h3>
             <ul className="list-disc list-inside space-y-2 text-sm text-deadlock-muted">
               <li>
-                API-created lobbies have no host. No one can modify settings, kick players,
-                or start a draft after creation.
+                API-created lobbies have no host, so they cannot be edited, and there is no Admin.
               </li>
               <li>
                 By default, <code className="text-amber">allowTeamChange</code> is <code className="text-amber">true</code>,

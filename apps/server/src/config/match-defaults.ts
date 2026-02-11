@@ -7,6 +7,7 @@ export const DEFAULT_MATCH_CONFIG: MatchConfig = {
   allowSpectators: true,
   maxRounds: 1,
   roundTime: 3600,
+  autoStart: false,
 };
 
 export const LOBBY_CODE_LENGTH = 6;

@@ -57,6 +57,7 @@ export interface MatchConfig {
   allowSpectators: boolean;
   maxRounds: number;
   roundTime: number;
+  autoStart?: boolean;
 }
 
 export interface Lobby {
