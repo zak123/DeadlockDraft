@@ -21,6 +21,7 @@ interface LobbyViewProps {
   onSetGameMode: (gameMode: GameMode) => Promise<void>;
   onUpdateDraftConfig: (updates: UpdateDraftConfigRequest) => Promise<DraftConfig | undefined>;
   onStartDraft: () => Promise<DraftState | undefined>;
+  onSwapTeams: () => Promise<void>;
 }
 
 export function LobbyView({
@@ -38,6 +39,7 @@ export function LobbyView({
   onSetGameMode,
   onUpdateDraftConfig,
   onStartDraft,
+  onSwapTeams,
 }: LobbyViewProps) {
   const { user } = useAuth();
   const [showDraftConfig, setShowDraftConfig] = useState(false);
@@ -243,37 +245,53 @@ export function LobbyView({
       </div>
 
       {/* Teams */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <TeamPanel
-          title="Team Amber"
-          team="amber"
-          participants={teamGroups.amber}
-          maxSize={lobby.matchConfig.teamSize}
-          hostUserId={lobby.hostUserId}
-          currentUserId={user?.id}
-          currentSessionToken={currentSessionToken || undefined}
-          onMoveToTeam={onMoveToTeam}
-          onSetCaptain={onSetCaptain}
-          onChangeSelfTeam={onChangeSelfTeam}
-          onKickParticipant={isHost ? onKickParticipant : undefined}
-          allowTeamChange={lobby.allowTeamChange}
-          canManage={isHost}
-        />
-        <TeamPanel
-          title="Team Sapphire"
-          team="sapphire"
-          participants={teamGroups.sapphire}
-          maxSize={lobby.matchConfig.teamSize}
-          hostUserId={lobby.hostUserId}
-          currentUserId={user?.id}
-          currentSessionToken={currentSessionToken || undefined}
-          onMoveToTeam={onMoveToTeam}
-          onSetCaptain={onSetCaptain}
-          onChangeSelfTeam={onChangeSelfTeam}
-          onKickParticipant={isHost ? onKickParticipant : undefined}
-          allowTeamChange={lobby.allowTeamChange}
-          canManage={isHost}
-        />
+      <div className="relative">
+        <div className="grid md:grid-cols-2 gap-6">
+          <TeamPanel
+            title="Team Amber"
+            team="amber"
+            participants={teamGroups.amber}
+            maxSize={lobby.matchConfig.teamSize}
+            hostUserId={lobby.hostUserId}
+            currentUserId={user?.id}
+            currentSessionToken={currentSessionToken || undefined}
+            onMoveToTeam={onMoveToTeam}
+            onSetCaptain={onSetCaptain}
+            onChangeSelfTeam={onChangeSelfTeam}
+            onKickParticipant={isHost ? onKickParticipant : undefined}
+            allowTeamChange={lobby.allowTeamChange}
+            canManage={isHost}
+          />
+          <TeamPanel
+            title="Team Sapphire"
+            team="sapphire"
+            participants={teamGroups.sapphire}
+            maxSize={lobby.matchConfig.teamSize}
+            hostUserId={lobby.hostUserId}
+            currentUserId={user?.id}
+            currentSessionToken={currentSessionToken || undefined}
+            onMoveToTeam={onMoveToTeam}
+            onSetCaptain={onSetCaptain}
+            onChangeSelfTeam={onChangeSelfTeam}
+            onKickParticipant={isHost ? onKickParticipant : undefined}
+            allowTeamChange={lobby.allowTeamChange}
+            canManage={isHost}
+          />
+        </div>
+        {isHost && (
+          <div className="flex justify-center mt-3">
+            <button
+              onClick={onSwapTeams}
+              title="Swap teams — moves all players to the opposite team"
+              className="flex items-center gap-2 px-4 py-1.5 bg-deadlock-bg border border-deadlock-border hover:border-amber/60 hover:text-amber rounded-lg text-sm text-deadlock-muted transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              Swap Teams
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Unassigned & Spectators */}

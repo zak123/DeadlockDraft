@@ -1203,6 +1203,28 @@ export class LobbyManager {
     };
   }
 
+  async swapTeams(code: string, hostUserId: string): Promise<LobbyWithParticipants | null> {
+    const lobby = await db.query.lobbies.findFirst({
+      where: eq(lobbies.code, code.toUpperCase()),
+    });
+
+    if (!lobby) return null;
+
+    if (lobby.hostUserId !== hostUserId) {
+      throw new Error('Only the host can swap teams');
+    }
+
+    // Swap amber ↔ sapphire in a single SQL statement
+    await db
+      .update(lobbyParticipants)
+      .set({
+        team: sql<string>`CASE WHEN team = 'amber' THEN 'sapphire' WHEN team = 'sapphire' THEN 'amber' ELSE team END`,
+      })
+      .where(eq(lobbyParticipants.lobbyId, lobby.id));
+
+    return this.getLobbyByCode(code);
+  }
+
   async getTotalActiveLobbyCount(): Promise<number> {
     const result = await db
       .select({ count: sql<number>`COUNT(*)` })

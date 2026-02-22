@@ -142,6 +142,13 @@ class ApiClient {
     await this.request(`/lobbies/${code}`, { method: 'DELETE' });
   }
 
+  async swapTeams(code: string): Promise<LobbyWithParticipants> {
+    const result = await this.request<{ lobby: LobbyWithParticipants }>(`/lobbies/${code}/swap-teams`, {
+      method: 'POST',
+    });
+    return result.lobby;
+  }
+
   async moveToTeam(
     code: string,
     participantId: string,
