@@ -368,30 +368,6 @@ lobbies.patch('/:code', requireAuth, async (c) => {
   }
 });
 
-// Swap teams (host only)
-lobbies.post('/:code/swap-teams', requireAuth, async (c) => {
-  const code = c.req.param('code');
-  const user = getAuthUser(c);
-
-  try {
-    const lobby = await lobbyManager.swapTeams(code, user.id);
-
-    if (!lobby) {
-      throw new HTTPException(404, { message: 'Lobby not found' });
-    }
-
-    // Broadcast update to all participants
-    await wsManager.broadcastLobbyUpdate(code);
-
-    return c.json({ lobby });
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new HTTPException(400, { message: error.message });
-    }
-    throw error;
-  }
-});
-
 // Cancel lobby (host only)
 lobbies.delete('/:code', requireAuth, async (c) => {
   const code = c.req.param('code');

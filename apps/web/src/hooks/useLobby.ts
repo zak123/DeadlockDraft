@@ -190,17 +190,6 @@ export function useLobby(code: string | null) {
     [code]
   );
 
-  const swapTeams = useCallback(async () => {
-    if (!code) return;
-    try {
-      const updatedLobby = await api.swapTeams(code);
-      setLobby(updatedLobby);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to swap teams');
-      throw err;
-    }
-  }, [code]);
-
   const updateLobbySettings = useCallback(
     async (settings: { allowTeamChange?: boolean }) => {
       if (!code) return;
@@ -264,7 +253,6 @@ export function useLobby(code: string | null) {
     setCaptain,
     kickParticipant,
     changeSelfTeam,
-    swapTeams,
     updateLobbySettings,
     setGameMode,
     createMatch,

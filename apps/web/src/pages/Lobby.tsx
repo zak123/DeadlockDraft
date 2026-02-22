@@ -34,7 +34,6 @@ export function Lobby() {
     setCaptain,
     kickParticipant,
     changeSelfTeam,
-    swapTeams,
     updateLobbySettings,
     setGameMode,
     readyMatch,
@@ -483,7 +482,6 @@ export function Lobby() {
                   onSetGameMode={setGameMode}
                   onUpdateDraftConfig={updateConfig}
                   onStartDraft={startDraft}
-                  onSwapTeams={swapTeams}
                 />
               </div>
               <div className="lg:sticky lg:top-4 lg:self-start space-y-4">

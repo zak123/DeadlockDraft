@@ -4,7 +4,7 @@ import { Button } from '../common/Button';
 import { DraftConfigModal } from '../draft';
 import { useAuth } from '../../hooks/useAuth';
 import type { LobbyWithParticipants, Team, DraftConfig, UpdateDraftConfigRequest, DraftState, GameMode } from '@deadlock-draft/shared';
-import { GAME_MODE_CONFIG } from '@deadlock-draft/shared';
+import { GAME_MODE_CONFIG, DEFAULT_DRAFT_PHASES } from '@deadlock-draft/shared';
 
 interface LobbyViewProps {
   lobby: LobbyWithParticipants;
@@ -21,7 +21,6 @@ interface LobbyViewProps {
   onSetGameMode: (gameMode: GameMode) => Promise<void>;
   onUpdateDraftConfig: (updates: UpdateDraftConfigRequest) => Promise<DraftConfig | undefined>;
   onStartDraft: () => Promise<DraftState | undefined>;
-  onSwapTeams: () => Promise<void>;
 }
 
 export function LobbyView({
@@ -39,7 +38,6 @@ export function LobbyView({
   onSetGameMode,
   onUpdateDraftConfig,
   onStartDraft,
-  onSwapTeams,
 }: LobbyViewProps) {
   const { user } = useAuth();
   const [showDraftConfig, setShowDraftConfig] = useState(false);
@@ -278,20 +276,36 @@ export function LobbyView({
             canManage={isHost}
           />
         </div>
-        {isHost && (
-          <div className="flex justify-center mt-3">
-            <button
-              onClick={onSwapTeams}
-              title="Swap teams — moves all players to the opposite team"
-              className="flex items-center gap-2 px-4 py-1.5 bg-deadlock-bg border border-deadlock-border hover:border-amber/60 hover:text-amber rounded-lg text-sm text-deadlock-muted transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
-              Swap Teams
-            </button>
-          </div>
-        )}
+        {isHost && (() => {
+          const phases = draftConfig?.phases ?? DEFAULT_DRAFT_PHASES;
+          const firstPickTeam = phases[0]?.picks[0] ?? 'amber';
+          const handleSwapFirstPick = () => {
+            const swapped = phases.map((phase) => ({
+              ...phase,
+              picks: phase.picks.map((t) => (t === 'amber' ? 'sapphire' : 'amber') as 'amber' | 'sapphire'),
+            }));
+            onUpdateDraftConfig({ phases: swapped });
+          };
+          return (
+            <div className="flex justify-center mt-3">
+              <button
+                onClick={handleSwapFirstPick}
+                title="Swap which team picks first in the draft"
+                className="flex items-center gap-2 px-4 py-1.5 bg-deadlock-bg border border-deadlock-border hover:border-amber/60 hover:text-amber rounded-lg text-sm text-deadlock-muted transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                <span>
+                  <span className={firstPickTeam === 'amber' ? 'text-amber' : 'text-blue-400'}>
+                    {firstPickTeam === 'amber' ? 'Amber' : 'Sapphire'}
+                  </span>
+                  {' picks first — Swap'}
+                </span>
+              </button>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Unassigned & Spectators */}
