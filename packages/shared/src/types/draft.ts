@@ -95,10 +95,15 @@ export const DRAFT_PRESETS: Record<DraftPreset, DraftPhase[]> = {
     { type: 'ban', picks: ['amber', 'sapphire'] },
     { type: 'pick', picks: ['amber', 'sapphire', 'sapphire', 'amber', 'sapphire'] },
     { type: 'ban', picks: ['amber', 'sapphire'] },
-    { type: 'pick', picks: ['sapphire', 'amber', 'amber', 'sapphire'] },
+    { type: 'pick', picks: ['sapphire', 'amber', 'amber', 'sapphire', 'amber'] },
     { type: 'ban', picks: ['amber', 'sapphire'] },
     { type: 'pick', picks: ['sapphire', 'amber'] },
   ],
+};
+
+export const TEAM_NAMES: Record<'amber' | 'sapphire', string> = {
+  amber: 'Hidden King',
+  sapphire: 'Archmother',
 };
 
 export function detectPreset(phases: DraftPhase[]): DraftPreset | 'custom' {

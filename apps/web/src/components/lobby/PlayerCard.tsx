@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import type { LobbyParticipant, Team } from '@deadlock-draft/shared';
+import { TEAM_NAMES } from '@deadlock-draft/shared';
 
 interface PlayerCardProps {
   participant: LobbyParticipant;
@@ -91,14 +92,14 @@ export function PlayerCard({
             <button
               onClick={() => onMoveToTeam('amber')}
               className="p-1 hover:bg-amber/20 rounded transition-colors"
-              title="Move to Amber"
+              title={`Move to ${TEAM_NAMES.amber}`}
             >
               <div className="w-4 h-4 rounded-full bg-amber" />
             </button>
             <button
               onClick={() => onMoveToTeam('sapphire')}
               className="p-1 hover:bg-sapphire/20 rounded transition-colors"
-              title="Move to Sapphire"
+              title={`Move to ${TEAM_NAMES.sapphire}`}
             >
               <div className="w-4 h-4 rounded-full bg-sapphire" />
             </button>
@@ -139,14 +140,14 @@ export function PlayerCard({
             <button
               onClick={() => onChangeSelfTeam('amber')}
               className="p-1 hover:bg-amber/20 rounded transition-colors"
-              title="Join Amber"
+              title={`Join ${TEAM_NAMES.amber}`}
             >
               <div className="w-4 h-4 rounded-full bg-amber" />
             </button>
             <button
               onClick={() => onChangeSelfTeam('sapphire')}
               className="p-1 hover:bg-sapphire/20 rounded transition-colors"
-              title="Join Sapphire"
+              title={`Join ${TEAM_NAMES.sapphire}`}
             >
               <div className="w-4 h-4 rounded-full bg-sapphire" />
             </button>

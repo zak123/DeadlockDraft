@@ -4,7 +4,7 @@ import { Button } from '../common/Button';
 import { DraftConfigModal } from '../draft';
 import { useAuth } from '../../hooks/useAuth';
 import type { LobbyWithParticipants, Team, DraftConfig, UpdateDraftConfigRequest, DraftState, GameMode } from '@deadlock-draft/shared';
-import { GAME_MODE_CONFIG, DEFAULT_DRAFT_PHASES } from '@deadlock-draft/shared';
+import { GAME_MODE_CONFIG, DEFAULT_DRAFT_PHASES, TEAM_NAMES } from '@deadlock-draft/shared';
 
 interface LobbyViewProps {
   lobby: LobbyWithParticipants;
@@ -246,7 +246,7 @@ export function LobbyView({
       <div className="relative">
         <div className="grid md:grid-cols-2 gap-6">
           <TeamPanel
-            title="Team Amber"
+            title={TEAM_NAMES.amber}
             team="amber"
             participants={teamGroups.amber}
             maxSize={lobby.matchConfig.teamSize}
@@ -261,7 +261,7 @@ export function LobbyView({
             canManage={isHost}
           />
           <TeamPanel
-            title="Team Sapphire"
+            title={TEAM_NAMES.sapphire}
             team="sapphire"
             participants={teamGroups.sapphire}
             maxSize={lobby.matchConfig.teamSize}
@@ -298,7 +298,7 @@ export function LobbyView({
                 </svg>
                 <span>
                   <span className={firstPickTeam === 'amber' ? 'text-amber' : 'text-blue-400'}>
-                    {firstPickTeam === 'amber' ? 'Amber' : 'Sapphire'}
+                    {TEAM_NAMES[firstPickTeam]}
                   </span>
                   {' picks first — Swap'}
                 </span>
@@ -362,7 +362,7 @@ export function LobbyView({
                 <span>Draft will auto-start when both teams have {lobby.matchConfig.teamSize} players and everyone is ready</span>
               </div>
               <div className="text-deadlock-muted ml-6">
-                {teamGroups.amber.length}/{lobby.matchConfig.teamSize} Amber, {teamGroups.sapphire.length}/{lobby.matchConfig.teamSize} Sapphire — {readyStatus.readyCount}/{readyStatus.totalCount} ready
+                {teamGroups.amber.length}/{lobby.matchConfig.teamSize} {TEAM_NAMES.amber}, {teamGroups.sapphire.length}/{lobby.matchConfig.teamSize} {TEAM_NAMES.sapphire} — {readyStatus.readyCount}/{readyStatus.totalCount} ready
               </div>
             </div>
           ) : (

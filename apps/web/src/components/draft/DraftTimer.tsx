@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import type { DraftTeam, DraftPhaseType } from '@deadlock-draft/shared';
+import { TEAM_NAMES } from '@deadlock-draft/shared';
 
 interface DraftTimerProps {
   currentTeam: DraftTeam;
@@ -18,7 +19,7 @@ export function DraftTimer({
   timerEnabled,
   remainingPicksInTurn,
 }: DraftTimerProps) {
-  const teamName = currentTeam === 'amber' ? 'Team Amber' : 'Team Sapphire';
+  const teamName = TEAM_NAMES[currentTeam];
   const phaseText = currentPhaseType === 'pick' ? 'Pick' : 'Ban';
   const isLowTime = timerEnabled && timeRemaining <= 10;
 

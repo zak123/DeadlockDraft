@@ -5,7 +5,7 @@ import type {
   DraftPreset,
   DraftPhase,
 } from "@deadlock-draft/shared";
-import { DRAFT_PRESETS, detectPreset } from "@deadlock-draft/shared";
+import { DRAFT_PRESETS, detectPreset, TEAM_NAMES } from "@deadlock-draft/shared";
 
 interface DraftConfigModalProps {
   isOpen: boolean;
@@ -240,7 +240,7 @@ export function DraftConfigModal({
                     {i + 1}.{" "}
                     {phase.type === "ban" ? "Ban" : "Pick"}:{" "}
                     {phase.picks
-                      .map((t) => (t === "amber" ? "Amber" : "Sapphire"))
+                      .map((t) => TEAM_NAMES[t])
                       .join(" \u2192 ")}
                   </div>
                 ))}
@@ -258,7 +258,7 @@ export function DraftConfigModal({
                   .reduce((sum, p) => sum + p.picks.filter((t) => t === "amber").length, 0);
                 return skipBans
                   ? `Total: ${totalPicks} picks per team`
-                  : `Total: ${totalBans} bans, ${totalPicks} picks per team (Amber)`;
+                  : `Total: ${totalBans} bans, ${totalPicks} picks per team (${TEAM_NAMES.amber})`;
               })()}
             </div>
           </div>

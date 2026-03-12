@@ -4,6 +4,7 @@ import { HeroGrid } from './HeroGrid';
 import { TeamDraftPanel } from './TeamDraftPanel';
 import { ConfirmPickModal } from './ConfirmPickModal';
 import type { DraftState, LobbyParticipant, DraftTeam, DraftPick } from '@deadlock-draft/shared';
+import { TEAM_NAMES } from '@deadlock-draft/shared';
 
 interface DraftViewProps {
   draftState: DraftState;
@@ -454,7 +455,7 @@ export function DraftView({
 
         {!isMyTurn && session.status === 'active' && (
           <div className="text-center text-deadlock-muted">
-            Waiting for {session.currentTeam === 'amber' ? 'Team Amber' : 'Team Sapphire'} to{' '}
+            Waiting for {TEAM_NAMES[session.currentTeam]} to{' '}
             {currentPhaseType}...
           </div>
         )}
@@ -486,7 +487,7 @@ export function DraftView({
 
           {!isMyTurn && session.status === 'active' && (
             <div className="text-center text-deadlock-muted">
-              Waiting for {session.currentTeam === 'amber' ? 'Team Amber' : 'Team Sapphire'} to{' '}
+              Waiting for {TEAM_NAMES[session.currentTeam]} to{' '}
               {currentPhaseType}...
             </div>
           )}
@@ -531,7 +532,7 @@ function CompletedTeamPanel({
   currentParticipant,
   onSelectHero,
 }: CompletedTeamPanelProps) {
-  const teamName = team === 'amber' ? 'Team Amber' : 'Team Sapphire';
+  const teamName = TEAM_NAMES[team];
   const isMyTeam = currentParticipant?.team === team;
 
   const handleHeroClick = async (heroId: string) => {

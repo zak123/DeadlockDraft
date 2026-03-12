@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { HeroCard } from './HeroCard';
 import type { DraftPick, DraftTeam, DraftPhaseType } from '@deadlock-draft/shared';
+import { TEAM_NAMES } from '@deadlock-draft/shared';
 
 interface TeamDraftPanelProps {
   team: DraftTeam;
@@ -21,7 +22,7 @@ export function TeamDraftPanel({
   isCurrentTurn,
   phaseType = 'pick',
 }: TeamDraftPanelProps) {
-  const teamName = team === 'amber' ? 'Team Amber' : 'Team Sapphire';
+  const teamName = TEAM_NAMES[team];
 
   const emptyPickSlots = maxPicks - picks.length;
   const emptyBanSlots = maxBans - bans.length;
