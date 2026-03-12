@@ -8,7 +8,9 @@ import type {
   DraftPick as SharedDraftPick,
   DraftPhase,
   DraftTeam,
+  DraftPreset,
 } from '@deadlock-draft/shared';
+import { DRAFT_PRESETS } from '@deadlock-draft/shared';
 import type { DraftConfig, DraftSession, DraftPick, LobbyParticipant } from '../db/schema';
 import { wsManager } from './websocket';
 import { deadlockApiClient } from './deadlock-api';
@@ -106,6 +108,25 @@ export class DraftManager {
     return toDraftConfigShared(config);
   }
 
+  async setDraftConfigPhases(lobbyId: string, phases: DraftPhase[]): Promise<void> {
+    const existing = await db.query.draftConfigs.findFirst({
+      where: eq(draftConfigs.lobbyId, lobbyId),
+    });
+    if (existing) {
+      await db.update(draftConfigs).set({ phases }).where(eq(draftConfigs.id, existing.id));
+    } else {
+      await db.insert(draftConfigs).values({
+        id: nanoid(),
+        lobbyId,
+        skipBans: false,
+        phases,
+        timePerTurn: 45,
+        allowSinglePlayer: false,
+        timerEnabled: true,
+      });
+    }
+  }
+
   async updateDraftConfig(
     lobbyId: string,
     hostUserId: string,
@@ -115,6 +136,7 @@ export class DraftManager {
       timePerTurn?: number;
       allowSinglePlayer?: boolean;
       timerEnabled?: boolean;
+      preset?: DraftPreset;
     }
   ): Promise<SharedDraftConfig | null> {
     const lobby = await db.query.lobbies.findFirst({
@@ -136,16 +158,17 @@ export class DraftManager {
           id: nanoid(),
           lobbyId,
           skipBans: updates.skipBans ?? false,
-          phases: updates.phases ?? DEFAULT_PHASES,
+          phases: (updates.preset ? DRAFT_PRESETS[updates.preset] : updates.phases) ?? DEFAULT_PHASES,
           timePerTurn: updates.timePerTurn ?? 45,
           allowSinglePlayer: updates.allowSinglePlayer ?? false,
           timerEnabled: updates.timerEnabled ?? true,
         })
         .returning();
     } else {
+      const resolvedPhases = updates.preset ? DRAFT_PRESETS[updates.preset] : updates.phases;
       const updateData: Partial<typeof draftConfigs.$inferInsert> = {};
       if (updates.skipBans !== undefined) updateData.skipBans = updates.skipBans;
-      if (updates.phases !== undefined) updateData.phases = updates.phases;
+      if (resolvedPhases !== undefined) updateData.phases = resolvedPhases;
       if (updates.timePerTurn !== undefined) updateData.timePerTurn = updates.timePerTurn;
       if (updates.allowSinglePlayer !== undefined) updateData.allowSinglePlayer = updates.allowSinglePlayer;
       if (updates.timerEnabled !== undefined) updateData.timerEnabled = updates.timerEnabled;

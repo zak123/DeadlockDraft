@@ -30,6 +30,7 @@ const updateDraftConfigSchema = z.object({
   timePerTurn: z.number().min(10).max(120).optional(),
   allowSinglePlayer: z.boolean().optional(),
   timerEnabled: z.boolean().optional(),
+  preset: z.enum(['casual', 'tournament']).optional(),
 });
 
 const makeDraftPickSchema = z.object({

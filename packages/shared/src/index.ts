@@ -3,6 +3,7 @@ import type {
   DraftState,
   DraftSession,
   DraftPick,
+  DraftPreset,
 } from './types/draft';
 
 // Re-export draft types
@@ -126,6 +127,7 @@ export interface CreateApiLobbyRequest {
   matchConfig?: Partial<MatchConfig>;
   maxPlayers?: number;
   allowTeamChange?: boolean;
+  draftPreset?: DraftPreset;
 }
 
 export interface CreateApiLobbyResponse {

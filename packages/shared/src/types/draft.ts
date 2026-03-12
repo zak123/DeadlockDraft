@@ -57,6 +57,7 @@ export interface UpdateDraftConfigRequest {
   timePerTurn?: number;
   allowSinglePlayer?: boolean;
   timerEnabled?: boolean;
+  preset?: DraftPreset;
 }
 
 export interface StartDraftResponse {
@@ -80,14 +81,37 @@ export interface GetHeroesResponse {
   heroes: string[];
 }
 
+export type DraftPreset = 'casual' | 'tournament';
+
+export const DRAFT_PRESETS: Record<DraftPreset, DraftPhase[]> = {
+  casual: [
+    { type: 'ban', picks: ['amber', 'sapphire'] },
+    { type: 'pick', picks: ['amber', 'sapphire', 'sapphire', 'amber'] },
+    { type: 'pick', picks: ['amber', 'sapphire', 'sapphire', 'amber'] },
+    { type: 'ban', picks: ['sapphire', 'amber'] },
+    { type: 'pick', picks: ['sapphire', 'amber', 'amber', 'sapphire'] },
+  ],
+  tournament: [
+    { type: 'ban', picks: ['amber', 'sapphire'] },
+    { type: 'pick', picks: ['amber', 'sapphire', 'sapphire', 'amber', 'sapphire'] },
+    { type: 'ban', picks: ['amber', 'sapphire'] },
+    { type: 'pick', picks: ['sapphire', 'amber', 'amber', 'sapphire'] },
+    { type: 'ban', picks: ['amber', 'sapphire'] },
+    { type: 'pick', picks: ['sapphire', 'amber'] },
+  ],
+};
+
+export function detectPreset(phases: DraftPhase[]): DraftPreset | 'custom' {
+  for (const [name, presetPhases] of Object.entries(DRAFT_PRESETS) as [DraftPreset, DraftPhase[]][]) {
+    if (JSON.stringify(phases) === JSON.stringify(presetPhases)) {
+      return name;
+    }
+  }
+  return 'custom';
+}
+
 // Default draft configuration
-export const DEFAULT_DRAFT_PHASES: DraftPhase[] = [
-  { type: 'ban', picks: ['amber', 'sapphire'] },
-  { type: 'pick', picks: ['amber', 'sapphire', 'sapphire', 'amber'] },
-  { type: 'pick', picks: ['amber', 'sapphire', 'sapphire', 'amber'] },
-  { type: 'ban', picks: ['sapphire', 'amber'] },
-  { type: 'pick', picks: ['sapphire', 'amber', 'amber', 'sapphire'] },
-];
+export const DEFAULT_DRAFT_PHASES: DraftPhase[] = DRAFT_PRESETS.casual;
 
 export const DEFAULT_TIME_PER_TURN = 60;
 

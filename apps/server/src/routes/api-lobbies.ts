@@ -2,9 +2,11 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { HTTPException } from 'hono/http-exception';
 import { lobbyManager } from '../services/lobby-manager';
+import { draftManager } from '../services/draft-manager';
 import { getConfig } from '../config/env';
 import { rateLimit } from '../middleware/rate-limit';
 import type { CreateApiLobbyResponse } from '@deadlock-draft/shared';
+import { DRAFT_PRESETS } from '@deadlock-draft/shared';
 
 const apiLobbies = new Hono();
 
@@ -31,6 +33,7 @@ const createApiLobbySchema = z.object({
     .optional(),
   maxPlayers: z.number().min(2).max(24).optional(),
   allowTeamChange: z.boolean().optional(),
+  draftPreset: z.enum(['casual', 'tournament']).optional(),
 });
 
 apiLobbies.post('/lobbies', async (c) => {
@@ -45,6 +48,10 @@ apiLobbies.post('/lobbies', async (c) => {
       validated.maxPlayers,
       validated.allowTeamChange
     );
+
+    if (validated.draftPreset && validated.draftPreset !== 'casual') {
+      await draftManager.setDraftConfigPhases(lobby.id, DRAFT_PRESETS[validated.draftPreset]);
+    }
 
     const config = getConfig();
 
