@@ -512,10 +512,13 @@ export class LobbyManager {
       const newMatchConfig = { ...lobby.matchConfig, ...updates.matchConfig };
 
       // If game mode changed, update team size based on game mode config
+      // Skip auto-update for custom mode - it allows any team size
       if (updates.matchConfig.gameMode && updates.matchConfig.gameMode !== lobby.matchConfig.gameMode) {
-        const gameModeConfig = GAME_MODE_CONFIG[updates.matchConfig.gameMode as GameMode];
-        if (gameModeConfig) {
-          newMatchConfig.teamSize = gameModeConfig.teamSize;
+        if (updates.matchConfig.gameMode !== 'custom') {
+          const gameModeConfig = GAME_MODE_CONFIG[updates.matchConfig.gameMode as GameMode];
+          if (gameModeConfig) {
+            newMatchConfig.teamSize = gameModeConfig.teamSize;
+          }
         }
       }
 
