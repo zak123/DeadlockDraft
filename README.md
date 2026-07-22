@@ -2,7 +2,7 @@
 
 A custom match coordinator for [Deadlock](https://store.steampowered.com/app/1422450/Deadlock/) - Valve's team-based shooter. Create lobbies, organize teams, and start custom matches with friends.
 
-**Live at: [deadlockdraft.com](https://deadlockdraft.com)**
+**This project has been abandoned in favor of using https://statlocker.gg/draft**
 
 ## Features
 
